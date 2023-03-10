@@ -1,0 +1,10 @@
+{
+  "filter_paths": "lib",
+  "solc_remaps": [
+    "@forge-std=lib/forge-std/src",
+    "@openzeppelin=lib/openzeppelin-contracts/contracts"
+  ],
+  "exclude_optimization": true,
+  "exclude_informational": true,
+  "detectors_to_exclude": "solc-version, arbitrary-send-erc20, too-many-digits, similar-names, reentrancy-unlimited-gas, costly-loop, reentrancy-benign"
+}

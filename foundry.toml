@@ -1,0 +1,41 @@
+[profile.default]
+src             = 'src'     # The source directory
+test            = 'test'    # The test directory
+out             = 'out'     # The ouput directory
+libs            = ['lib']   # A list of library directories
+solc_version    = '0.8.7'   # Override for the solc version (setting this ignores `auto_detect_solc`)
+optimizer       = false     # Enable or disable the solc optimizer
+optimizer_runs  = 200       # The number of optimizer runs
+verbosity       = 3         # The verbosity of tests
+chainId         = 1         # The chain for tests
+
+[fmt]
+line_length                      = 120          # Specifies the maximum line length where the formatter will try to wrap the line.
+tab_width                        = 4            # Number of spaces per indentation level.
+bracket_spacing                  = true         # Whether or not to print spaces between brackets.
+int_types                        = "long"       # Style of uint/int256 types. Valid values are: "long", "short" or "preserve".
+func_attrs_with_params_multiline = true         # If function parameters are multiline then always put the function attributes on separate lines.
+quote_style                      = "double"     # Defines the quotation mark style. Valid values are: "double", "single" or "preserve".
+number_underscore                = "thousands"  # Style of underscores in number literals. Valid values are: "preserve", "thousands" or "remove".
+
+[doc]
+out    = "docs"             # An output path for generated documentation.
+title  = "Foundry Template" # Title for the generated documentation.
+book   = "./book.toml"      # Path to user provided book.toml.
+ignore = []                 # List of files to ignore when generating documentation.
+
+[profile.deploy.rpc_endpoints]
+arbitrum = "${RPC_URL_ARBITRUM}"
+avalanche = "${RPC_URL_AVALANCHE}"
+goerli   = "${RPC_URL_GOERLI}"
+mainnet  = "${RPC_URL_MAINNET}"
+optimism = "${RPC_URL_OPTIMISM}"
+polygon  = "${RPC_URL_POLYGON}"
+
+[profile.deploy.etherscan]
+arbitrum  = { key = "${ARBISCAN_KEY}",           url = "https://api.arbiscan.io/api" }
+avalanche = { key = "${SNOWTRACE_KEY}",          url = "https://api.snowtrace.io/api" }
+goerli    = { key = "${ETHERSCAN_KEY}",          url = "https://api-goerli.etherscan.io/api" }
+mainnet   = { key = "${ETHERSCAN_KEY}" }
+optimism  = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "https://api-optimistic.etherscan.io/api" }
+polygon   = { key = "${POLYGONSCAN_KEY}",        url = "https://api.polygonscan.com/api" }

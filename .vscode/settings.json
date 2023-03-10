@@ -1,0 +1,10 @@
+{
+    "files.autoSave": "onFocusChange",
+    "emeraldwalk.runonsave": {
+        "commands": [
+               {
+                   "cmd": "make format"
+               }
+        ]
+    }
+}
