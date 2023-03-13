@@ -13,7 +13,6 @@ import { WETH9 } from "../src/src-default/WETH9.sol";
 //import { UniswapV2Router01 } from "../lib/v2-periphery/contracts/UniswapV2Router01.sol";
 
 contract VaultTest is Test {
-
     error Unauthorized();
     error AlreadyInitializedError();
     error NoAssetToWithdrawError();
@@ -70,8 +69,8 @@ contract VaultTest is Test {
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
         vm.stopPrank();
 
-        // Fast-forward 3 months 
-        vm.warp(time += 3*SECONDS_IN_30_DAYS);
+        // Fast-forward 3 months
+        vm.warp(time += 3 * SECONDS_IN_30_DAYS);
 
         // Bob tries to claim rewards and withdraw deposit
         vm.startPrank(bob);
@@ -87,50 +86,75 @@ contract VaultTest is Test {
         monthsLocked = 12;
         hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE);
-        vault.deposit(BOB_INITIAL_LP_BALANCE , monthsLocked, hint);
+        vault.deposit(BOB_INITIAL_LP_BALANCE, monthsLocked, hint);
         require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
         vm.stopPrank();
-    
+
         // Alice claims her rewards and tries to withdraw before lock period
         vm.startPrank(alice);
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", 317*SECONDS_IN_30_DAYS*3);
+        console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", 317 * SECONDS_IN_30_DAYS * 3);
         vm.expectRevert(NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
 
         // Fast-forward 5 months
-        vm.warp(time += 5*SECONDS_IN_30_DAYS);
+        vm.warp(time += 5 * SECONDS_IN_30_DAYS);
 
         // Alice withdraws her deposit and claims her rewards
         vm.startPrank(alice);
         vault.withdraw();
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        console.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", 317*SECONDS_IN_30_DAYS*3 + 317*SECONDS_IN_30_DAYS*3/5);
+        console.log(
+            "Month 8. Alice rewards:",
+            rewardToken.balanceOf(alice),
+            "->",
+            317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5
+        );
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
         vm.startPrank(bob);
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        console.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", 317*SECONDS_IN_30_DAYS*3*4/5 + 317*SECONDS_IN_30_DAYS*2);
+        console.log(
+            "Month 8. Bob rewards:",
+            rewardToken.balanceOf(bob),
+            "->",
+            317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 2
+        );
         vm.expectRevert(NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
 
-        // Fast-forward 12 months 
-        vm.warp(time += 12*SECONDS_IN_30_DAYS);
+        // Fast-forward 12 months
+        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
         // Bob withdraws deposit and claims rewards
         vm.startPrank(bob);
         vault.withdraw();
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        console.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", 317*SECONDS_IN_30_DAYS*3 + 317*SECONDS_IN_30_DAYS*3/5);
-        console.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", 317*SECONDS_IN_30_DAYS*3*4/5 + 317*SECONDS_IN_30_DAYS*9);
-        console.log("Total rewards:", rewardToken.balanceOf(alice)+rewardToken.balanceOf(bob), "->", 317*SECONDS_IN_30_DAYS*15);
+        console.log(
+            "Month 20. Alice rewards:",
+            rewardToken.balanceOf(alice),
+            "->",
+            317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5
+        );
+        console.log(
+            "Month 20. Bob rewards:",
+            rewardToken.balanceOf(bob),
+            "->",
+            317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 9
+        );
+        console.log(
+            "Total rewards:",
+            rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob),
+            "->",
+            317 * SECONDS_IN_30_DAYS * 15
+        );
         vm.stopPrank();
 
         // Check if withdraws were successful
@@ -139,10 +163,9 @@ contract VaultTest is Test {
 
         balance = LPtoken.balanceOf(bob);
         require(balance == BOB_INITIAL_LP_BALANCE, "Failed to assert bob's balance");
-     }
+    }
 
     function setUpUniswap() internal {
-
         vm.label(deployer, "Deployer");
         vm.label(alice, "Alice");
         vm.label(bob, "Bob");
@@ -207,7 +230,6 @@ contract VaultTest is Test {
         );
         require(success);
         vm.stopPrank();
-
 
         //sanity checks
         uint256 balance = LPtoken.balanceOf(alice);

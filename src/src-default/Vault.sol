@@ -131,10 +131,10 @@ contract Vault is IVault {
         id = _depositList[LIST_START_ID].nextId;
         uint256 i;
         while (id != 0) {
-            if (_depositList[id].depositor == depositor_){
+            if (_depositList[id].depositor == depositor_) {
                 depositIds_[i] = id;
                 i++;
-            } 
+            }
             id = _depositList[id].nextId;
         }
     }

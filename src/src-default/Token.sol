@@ -15,7 +15,7 @@ contract Token is ERC20 {
 
     constructor(address owner_) ERC20("Token", "TKN") {
         _owner = owner_;
-     }
+    }
 
     /// @dev Mint tokens to receiver
     /// @param amount_ Amount of tokens to mint
