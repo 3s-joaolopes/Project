@@ -12,10 +12,10 @@ remove :;
 	rm -rf .git/modules/* && \
 	rm -rf lib && touch .gitmodules
 
-# Install dependencies
+# Install dependencies forge install Uniswap/v2-core --no-commit &&\ forge install Uniswap/v2-periphery --no-commit &&\ forge install Uniswap/solidity-lib --no-commit
 install :;
 	@forge install foundry-rs/forge-std@master --no-commit && \
-	forge install openzeppelin/openzeppelin-contracts@master --no-commit
+	forge install openzeppelin/openzeppelin-contracts@master --no-commit &&\
 
 # Update dependencies
 update :;
@@ -23,7 +23,7 @@ update :;
 
 # Build the project
 build :;
-	@forge build
+	@forge build && FOUNDRY_PROFILE=0_6_x forge build
 
 # Format code
 format:

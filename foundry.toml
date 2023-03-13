@@ -1,5 +1,5 @@
 [profile.default]
-src             = 'src'     # The source directory
+src             = 'src/src-default'     # The source directory
 test            = 'test'    # The test directory
 out             = 'out'     # The ouput directory
 libs            = ['lib']   # A list of library directories
@@ -8,6 +8,14 @@ optimizer       = false     # Enable or disable the solc optimizer
 optimizer_runs  = 200       # The number of optimizer runs
 verbosity       = 3         # The verbosity of tests
 chainId         = 1         # The chain for tests
+
+[profile.0_6_x]
+src = 'src/src-0_6_x/'
+out = 'out'
+libs = ['lib']
+script = 'script/script-0_6_x'
+test = 'test/test-0_6_x'
+solc-version = '0.6.12'
 
 [fmt]
 line_length                      = 120          # Specifies the maximum line length where the formatter will try to wrap the line.
