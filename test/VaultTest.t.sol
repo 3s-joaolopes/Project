@@ -44,21 +44,34 @@ contract VaultTest is Test {
         rewardToken = vault.rewardToken();
     }
 
-    function testVault() external {
-        uint256 monthsLocked;
-        uint256 hint;
-        uint256[] memory depositIds;
-
-        vm.warp(time);
-
+    function testVault_NoDeposit() external {
         // Alice tries to claim rewards and withdraw deposit
         vm.startPrank(alice);
-        depositIds = vault.getDepositIds(alice);
+        uint256[] memory depositIds = vault.getDepositIds(alice);
         vm.expectRevert(NoRewardsToClaimError.selector);
         vault.claimRewards(depositIds);
         vm.expectRevert(NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
+    }
+
+    function testVault_InvalidLockPeriod() external {
+        // Alice tries to make a deposit locked for 10 months
+        vm.startPrank(alice);
+        uint256 monthsLocked = 10;
+        uint256 hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
+        vm.expectRevert(InvalidLockPeriodError.selector);
+        vault.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vm.stopPrank();
+    }
+
+    function testVault_scenario1() external {
+        uint256 monthsLocked;
+        uint256 hint;
+        uint256[] memory depositIds;
+
+        vm.warp(time);
 
         // Alice deposits all her LPtokens for 6 months
         vm.startPrank(alice);
@@ -132,11 +145,21 @@ contract VaultTest is Test {
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
+        // Alice tries to claim bob's rewards
+        vm.startPrank(alice);
+        depositIds = vault.getDepositIds(bob);
+        vm.expectRevert(InvalidHintError.selector);
+        vault.claimRewards(depositIds);
+        vm.stopPrank();
+
         // Bob withdraws deposit and claims rewards
         vm.startPrank(bob);
         vault.withdraw();
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
+        vm.stopPrank();
+
+        // Print reward token balances
         console.log(
             "Month 20. Alice rewards:",
             rewardToken.balanceOf(alice),
@@ -155,7 +178,6 @@ contract VaultTest is Test {
             "->",
             317 * SECONDS_IN_30_DAYS * 15
         );
-        vm.stopPrank();
 
         // Check if withdraws were successful
         uint256 balance = LPtoken.balanceOf(alice);
@@ -173,7 +195,6 @@ contract VaultTest is Test {
         // Fund  wallets
         vm.deal(deployer, UNISWAP_INITIAL_WETH_RESERVE);
         vm.deal(alice, ALICE_INITIAL_LP_BALANCE);
-        //vm.deal(bob, BOB_INITIAL_LP_BALANCE);
 
         vm.startPrank(deployer);
 
@@ -187,7 +208,6 @@ contract VaultTest is Test {
         vm.label(factory, "Factory");
         vm.label(router, "Router");
 
-        //console.log(router);
         // Create pair WETH <-> Token and add liquidity
         tokenA.mintRewards(deployer, UNISWAP_INITIAL_TOKEN_RESERVE);
         tokenA.approve(router, UNISWAP_INITIAL_TOKEN_RESERVE);
@@ -241,46 +261,3 @@ contract VaultTest is Test {
         //console.log("bob balance:", balance);
     }
 }
-
-/*    function uniswap() internal{
-
-        vm.deal(deployer, UNISWAP_INITIAL_WETH_RESERVE);
-        vm.startPrank(deployer);
-
-        tokenA = new Token();
-        weth = new WETH9();
-        tokenA.mintRewards(deployer, UNISWAP_INITIAL_TOKEN_RESERVE);
-
-        // Setup Uniswap V2 contracts
-        factory = new UniswapV2Factory(address(0));
-        router = new UniswapV2Router01(address(factory), address(weth));
-
-        //address exchange = factory.createPair(address(tokenA), address(tokenB));
-
-        // Create pair WETH <-> Token and add liquidity
-        tokenA.approve(router, UNISWAP_INITIAL_TOKEN_RESERVE);
-        (bool success, ) = router.call{value: UNISWAP_INITIAL_WETH_RESERVE}(
-            abi.encodeWithSignature(
-                "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)", 
-                address(tokenA), 
-                UNISWAP_INITIAL_TOKEN_RESERVE, 
-                0, 
-                0, 
-                deployer, 
-                block.timestamp * 2
-            )
-        );
-        require(success);
-
-        // Get the pair to interact with
-        address exchange = factory.getPair(address(tokenA), address(weth));
-        //(, bytes memory data) = factory.call(abi.encodeWithSignature("getPair(address,address)", address(token), address(weth)));
-        //exchange = abi.decode(data, (address));
-
-        // Sanity check
-        (, data) = exchange.call(abi.encodeWithSignature("balanceOf(address)", deployer));
-        uint256 deployerBalance = abi.decode(data, (uint256));
-        assertGt(deployerBalance, 0);
-
-        vm.stopPrank();
-    }*/
