@@ -8,7 +8,7 @@ import { IERC20 } from "@openzeppelin/token/ERC20/IERC20.sol";
 import { Vault } from "../src/src-default/Vault.sol";
 import { IVault } from "../src/src-default/interfaces/IVault.sol";
 import { Token } from "../src/src-default/Token.sol";
-import { WETH9 } from "./WETH9.sol";
+import { WETH9 } from "../src/src-default/WETH9.sol";
 //import { UniswapV2Factory } from "../lib/v2-core/contracts/UniswapV2Factory.sol";
 //import { UniswapV2Router01 } from "../lib/v2-periphery/contracts/UniswapV2Router01.sol";
 
