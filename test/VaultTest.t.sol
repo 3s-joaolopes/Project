@@ -8,7 +8,6 @@ import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 
 contract VaultTest is Test, VaultFixture {
-
     function setUp() public override {
         super.setUp();
 
@@ -82,19 +81,14 @@ contract VaultTest is Test, VaultFixture {
         // Alice checks claimable rewards
         uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
         depositIds = vault.getDepositIds(alice);
-        console.log(
-            "Alice 6 month rewards:",
-            vault.claimableRewards(alice, depositIds),
-            "->",
-            expectedValue
-        );
-        require( similar(vault.claimableRewards(alice, depositIds), expectedValue), "Incorrect claimableRewards");
+        console.log("Alice 6 month rewards:", vault.claimableRewards(alice, depositIds), "->", expectedValue);
+        require(similar(vault.claimableRewards(alice, depositIds), expectedValue), "Incorrect claimableRewards");
 
         // Alice withdraws her deposit and claims her rewards
         vault.withdraw();
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 2");
+        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
         vm.stopPrank();
     }
 
@@ -154,12 +148,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         expectedValue = 317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5;
-        console.log(
-            "Month 8. Alice rewards:",
-            rewardToken.balanceOf(alice),
-            "->",
-            expectedValue
-        );
+        console.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", expectedValue);
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 2");
         vm.stopPrank();
 
@@ -168,12 +157,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = 317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 2;
-        console.log(
-            "Month 8. Bob rewards:",
-            rewardToken.balanceOf(bob),
-            "->",
-            expectedValue
-        );
+        console.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", expectedValue);
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 2");
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
@@ -198,29 +182,16 @@ contract VaultTest is Test, VaultFixture {
 
         // Print reward token balances
         expectedValue = 317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5;
-        console.log(
-            "Month 20. Alice rewards:",
-            rewardToken.balanceOf(alice),
-            "->",
-            expectedValue
-        );
+        console.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", expectedValue);
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 3");
         expectedValue = 317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 9;
-        console.log(
-            "Month 20. Bob rewards:",
-            rewardToken.balanceOf(bob),
-            "->",
-            expectedValue
-        );
+        console.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", expectedValue);
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 4");
         expectedValue = 317 * SECONDS_IN_30_DAYS * 15;
-        console.log(
-            "Total rewards:",
-            rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob),
-            "->",
-            expectedValue
+        console.log("Total rewards:", rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), "->", expectedValue);
+        require(
+            similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 4"
         );
-        require(similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 4");
 
         // Check if withdrawls were successful
         uint256 balance = LPtoken.balanceOf(alice);

@@ -101,10 +101,16 @@ contract Vault is IVault, UUPSUpgradeable {
         for (uint256 i = 0; i < depositIds_.length; i++) {
             uint256 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
-            if (_depositList[id].expireTime >=  block.timestamp)
-                amount += int256((getRewardsPerShare(block.timestamp) - _depositList[id].rewardsPerShare) * _depositList[id].shares);
-            else
-                amount += int256((getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare) * _depositList[id].shares);
+            if (_depositList[id].expireTime >= block.timestamp) {
+                amount += int256(
+                    (getRewardsPerShare(block.timestamp) - _depositList[id].rewardsPerShare) * _depositList[id].shares
+                );
+            } else {
+                amount += int256(
+                    (getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare)
+                        * _depositList[id].shares
+                );
+            }
         }
         amount += _pendingRewards[depositor_];
 

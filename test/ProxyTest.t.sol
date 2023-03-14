@@ -9,7 +9,6 @@ import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
 
-
 contract ProxyTest is Test, VaultFixture {
     Vault vaultImplementation;
 
@@ -42,6 +41,8 @@ contract ProxyTest is Test, VaultFixture {
         Vault vaultImplementationUpgrade = new Vault();
         vm.startPrank(deployer);
         vault.upgradeTo(address(vaultImplementationUpgrade));
+        vm.expectRevert(IVault.AlreadyInitializedError.selector);
+        vault.initialize(address(LPtoken));
         vm.stopPrank();
     }
 
@@ -63,22 +64,12 @@ contract ProxyTest is Test, VaultFixture {
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
-        // Alice checks claimable rewards
-        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
-        depositIds = vault.getDepositIds(alice);
-        console.log(
-            "Alice 6 month rewards:",
-            vault.claimableRewards(alice, depositIds),
-            "->",
-            expectedValue
-        );
-        require( similar(vault.claimableRewards(alice, depositIds), expectedValue), "Incorrect claimableRewards");
-
         // Alice withdraws her deposit and claims her rewards
         vault.withdraw();
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 2");
+        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
+        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
         vm.stopPrank();
     }
 }

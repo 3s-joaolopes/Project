@@ -35,15 +35,15 @@ contract VaultFixture is Test {
         require(similar(100, 101) == true, "similar failed 4");
     }
 
-    function similar(uint256 a, uint256 b) public pure returns (bool result){
-        if(a == 0 || b == 0) revert("Can't compare to 0");
+    function similar(uint256 a, uint256 b) public pure returns (bool result) {
+        if (a == 0 || b == 0) revert("Can't compare to 0");
         uint256 dif;
         uint256 smallest;
-        dif = (a > b) ? a-b: b-a;
-        smallest = (a > b) ? b: a;
-        dif*=100;
-        if(dif/smallest < 2) result = true;
-        else result = false; 
+        dif = (a > b) ? a - b : b - a;
+        smallest = (a > b) ? b : a;
+        dif *= 100;
+        if (dif / smallest < 2) result = true;
+        else result = false;
     }
 
     function setUpUniswap() internal {
