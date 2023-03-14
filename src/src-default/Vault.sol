@@ -11,16 +11,12 @@ contract Vault is IVault {
     uint256 constant LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
 
-    uint256 public totalShares;
-
     bool private _initialized;
     address private _owner;
+    uint256 private _totalShares;
     uint256 private _lastRewardUpdateTime;
     uint256 private _lastRewardsPerShare;
     uint256 private _idCounter = 2;
-
-    //mapping(address => uint256[]) private override _depositIds;
-    //mapping(address => uint256) private override _claimedRewards;
 
     mapping(address => uint256) private _withdrawableAssets;
     mapping(address => int256) private _pendingRewards; //can be negative
@@ -45,7 +41,6 @@ contract Vault is IVault {
         asset = IERC20(asset_);
         _owner = msg.sender;
 
-        totalShares = 1;
         _lastRewardUpdateTime = block.timestamp;
     }
 
@@ -145,7 +140,7 @@ contract Vault is IVault {
 
     function getRewardsPerShare() internal view returns (uint256 rewardsPerShare_) {
         rewardsPerShare_ =
-            _lastRewardsPerShare + (block.timestamp - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
+            _lastRewardsPerShare + (block.timestamp - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
     }
 
     function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_) {
@@ -161,10 +156,12 @@ contract Vault is IVault {
         internal
         returns (uint256 rewardsPerShare_)
     {
-        _lastRewardsPerShare += (timeStamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
+        if (_totalShares != 0) {
+            _lastRewardsPerShare += (timeStamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
+        }
         _lastRewardUpdateTime = timeStamp_;
-        if (positiveVariation_) totalShares += shareVariation_;
-        else totalShares -= shareVariation_;
+        if (positiveVariation_) _totalShares += shareVariation_;
+        else _totalShares -= shareVariation_;
 
         rewardsPerShare_ = _lastRewardsPerShare;
     }
