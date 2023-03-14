@@ -45,7 +45,7 @@ contract ProxyTest is Test, VaultFixture {
         vm.stopPrank();
     }
 
-    function _testProxy_Deposit() external {
+    function testProxy_Deposit() external {
         uint256 monthsLocked;
         uint256 hint;
         uint256[] memory depositIds;
@@ -58,25 +58,26 @@ contract ProxyTest is Test, VaultFixture {
         hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
         vault.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Unsuccessful deposit");
-        vm.stopPrank();
+        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
 
-        // Fast-forward 8 months
-        vm.warp(time += 8 * SECONDS_IN_30_DAYS);
+        // Fast-forward 12 months
+        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
-
-        // Alice withdraws her deposit and claims her rewards
-        vm.startPrank(alice);
-        vault.withdraw();
-        depositIds = vault.getDepositIds(alice);
-        vault.claimRewards(depositIds);
+        // Alice checks claimable rewards
         uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
+        depositIds = vault.getDepositIds(alice);
         console.log(
             "Alice 6 month rewards:",
-            rewardToken.balanceOf(alice),
+            vault.claimableRewards(alice, depositIds),
             "->",
             expectedValue
         );
+        require( similar(vault.claimableRewards(alice, depositIds), expectedValue), "Incorrect claimableRewards");
+
+        // Alice withdraws her deposit and claims her rewards
+        vault.withdraw();
+        depositIds = vault.getDepositIds(alice);
+        vault.claimRewards(depositIds);
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 2");
         vm.stopPrank();
     }

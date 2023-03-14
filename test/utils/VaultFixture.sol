@@ -36,6 +36,7 @@ contract VaultFixture is Test {
     }
 
     function similar(uint256 a, uint256 b) public pure returns (bool result){
+        if(a == 0 || b == 0) revert("Can't compare to 0");
         uint256 dif;
         uint256 smallest;
         dif = (a > b) ? a-b: b-a;

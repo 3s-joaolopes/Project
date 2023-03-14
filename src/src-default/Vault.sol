@@ -17,7 +17,7 @@ contract Vault is IVault, UUPSUpgradeable {
     uint256 private _totalShares;
     uint256 private _lastRewardUpdateTime;
     uint256 private _lastRewardsPerShare;
-    uint256 private _idCounter = 2;
+    uint256 private _idCounter;
 
     mapping(address => uint256) private _withdrawableAssets;
     mapping(address => int256) private _pendingRewards; //can be negative
@@ -42,6 +42,7 @@ contract Vault is IVault, UUPSUpgradeable {
         asset = IERC20(asset_);
         _owner = msg.sender;
 
+        _idCounter = 2;
         _lastRewardUpdateTime = block.timestamp;
     }
 
