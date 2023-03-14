@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { Token } from "./Token.sol";
 import { IVault } from "./interfaces/IVault.sol";
+import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract Vault is IVault {
+contract Vault is IVault, UUPSUpgradeable {
     uint256 constant REWARDS_PER_SECOND = 317; // ~ 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant LIST_START_ID = 1;
@@ -99,7 +100,10 @@ contract Vault is IVault {
         for (uint256 i = 0; i < depositIds_.length; i++) {
             uint256 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
-            amount += int256((getRewardsPerShare() - _depositList[id].rewardsPerShare) * _depositList[id].shares);
+            if (_depositList[id].expireTime >=  block.timestamp)
+                amount += int256((getRewardsPerShare(block.timestamp) - _depositList[id].rewardsPerShare) * _depositList[id].shares);
+            else
+                amount += int256((getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare) * _depositList[id].shares);
         }
         amount += _pendingRewards[depositor_];
 
@@ -136,11 +140,11 @@ contract Vault is IVault {
         }
     }
 
-    function upgrade(address newImplementation_) external override onlyOwner { }
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
 
-    function getRewardsPerShare() internal view returns (uint256 rewardsPerShare_) {
+    function getRewardsPerShare(uint256 timestamp_) internal view returns (uint256 rewardsPerShare_) {
         rewardsPerShare_ =
-            _lastRewardsPerShare + (block.timestamp - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
+            _lastRewardsPerShare + (timestamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
     }
 
     function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_) {

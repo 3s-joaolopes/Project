@@ -48,9 +48,6 @@ interface IVault {
     /// @notice The deposits held by a depositor
     function getDepositIds(address depositor_) external view returns (uint256[] memory depositIds_);
 
-    /// @notice Upgrade delegate implementation
-    function upgrade(address newImplementation_) external;
-
     /// @dev Check if a hint is valid
     //function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_);
 
