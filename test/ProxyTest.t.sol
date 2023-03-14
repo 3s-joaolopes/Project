@@ -10,12 +10,10 @@ import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
 
 contract ProxyTest is Test, VaultFixture {
-    Vault vaultImplementation;
-
     function setUp() public override {
         super.setUp();
 
-        vaultImplementation = new Vault();
+        Vault vaultImplementation = new Vault();
         bytes memory initializeData = abi.encodeWithSignature("initialize(address)", address(LPtoken));
         vm.startPrank(deployer);
         vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
