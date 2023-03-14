@@ -9,8 +9,6 @@ import { Vault } from "../src/src-default/Vault.sol";
 import { IVault } from "../src/src-default/interfaces/IVault.sol";
 import { Token } from "../src/src-default/Token.sol";
 import { WETH9 } from "../src/src-default/WETH9.sol";
-//import { UniswapV2Factory } from "../lib/v2-core/contracts/UniswapV2Factory.sol";
-//import { UniswapV2Router01 } from "../lib/v2-periphery/contracts/UniswapV2Router01.sol";
 
 contract VaultTest is Test {
     error Unauthorized();
@@ -19,6 +17,7 @@ contract VaultTest is Test {
     error NoRewardsToClaimError();
     error InvalidHintError();
     error InvalidLockPeriodError();
+    error InsuficientDepositAmountError();
 
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100 ether;
@@ -44,14 +43,36 @@ contract VaultTest is Test {
         rewardToken = vault.rewardToken();
     }
 
+    function testVault_AlreadyInitialized() external {
+        vm.startPrank(alice);
+        vm.expectRevert(AlreadyInitializedError.selector);
+        vault.initialize(address(0));
+        vm.stopPrank();
+    }
+
+    function testVault_Unauthorized() external {
+        vm.startPrank(alice);
+        vm.expectRevert(Unauthorized.selector);
+        vault.upgrade(address(0));
+        vm.stopPrank();
+    }
+
     function testVault_NoDeposit() external {
-        // Alice tries to claim rewards and withdraw deposit
+        // Alice tries to claim rewards and withdraw deposit without depositing
         vm.startPrank(alice);
         uint256[] memory depositIds = vault.getDepositIds(alice);
         vm.expectRevert(NoRewardsToClaimError.selector);
         vault.claimRewards(depositIds);
         vm.expectRevert(NoAssetToWithdrawError.selector);
         vault.withdraw();
+        vm.stopPrank();
+    }
+
+    function testVault_InsuficientDepositAmount() external {
+        vm.startPrank(alice);
+        LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
+        vm.expectRevert(InsuficientDepositAmountError.selector);
+        vault.deposit(1, 6, 100);
         vm.stopPrank();
     }
 
@@ -94,12 +115,11 @@ contract VaultTest is Test {
         vault.withdraw();
         vm.stopPrank();
 
-        // Bob deposits all his LPtokens for 1 year
+        // Bob deposits all his LPtokens for 1 year using invalid hint
         vm.startPrank(bob);
         monthsLocked = 12;
-        hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE);
-        vault.deposit(BOB_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vault.deposit(BOB_INITIAL_LP_BALANCE, monthsLocked, 100);
         require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
         vm.stopPrank();
 
@@ -179,7 +199,7 @@ contract VaultTest is Test {
             317 * SECONDS_IN_30_DAYS * 15
         );
 
-        // Check if withdraws were successful
+        // Check if withdrawls were successful
         uint256 balance = LPtoken.balanceOf(alice);
         require(balance == ALICE_INITIAL_LP_BALANCE, "Failed to assert alice's balance");
 

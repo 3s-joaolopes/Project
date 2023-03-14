@@ -22,6 +22,7 @@ interface IVault {
     error NoRewardsToClaimError();
     error InvalidHintError();
     error InvalidLockPeriodError();
+    error InsuficientDepositAmountError();
 
     /// @notice Deposit Uniswap LP tokens and lock them to earn rewards
     /// @param amount_        Amount of Uniswap LP tokens to deposit
@@ -47,8 +48,8 @@ interface IVault {
     /// @notice The deposits held by a depositor
     function getDepositIds(address depositor_) external view returns (uint256[] memory depositIds_);
 
-    /// @dev Upgrade delegate implementation
-    //function upgrade(address newImplementation_) external;
+    /// @notice Upgrade delegate implementation
+    function upgrade(address newImplementation_) external;
 
     /// @dev Check if a hint is valid
     //function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_);

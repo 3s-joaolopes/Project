@@ -9,13 +9,14 @@ contract Vault is IVault {
     uint256 constant REWARDS_PER_SECOND = 317; // ~ 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant LIST_START_ID = 1;
+    uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
 
     uint256 public totalShares;
 
     bool private _initialized;
     address private _owner;
     uint256 private _lastRewardUpdateTime;
-    uint256 private _rewardsPerShare;
+    uint256 private _lastRewardsPerShare;
     uint256 private _idCounter = 2;
 
     //mapping(address => uint256[]) private override _depositIds;
@@ -52,6 +53,7 @@ contract Vault is IVault {
         if (monthsLocked_ != 6 && monthsLocked_ != 12 && monthsLocked_ != 24 && monthsLocked_ != 48) {
             revert InvalidLockPeriodError();
         }
+        if(amount_ < MINIMUM_DEPOSIT_AMOUNT) revert InsuficientDepositAmountError();
 
         maintainDepositList();
         uint256 expireTime = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
@@ -139,11 +141,11 @@ contract Vault is IVault {
         }
     }
 
-    function upgrade(address newImplementation_) external onlyOwner { }
+    function upgrade(address newImplementation_) external override onlyOwner { }
 
     function getRewardsPerShare() internal view returns (uint256 rewardsPerShare_) {
         rewardsPerShare_ =
-            _rewardsPerShare + (block.timestamp - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
+            _lastRewardsPerShare + (block.timestamp - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
     }
 
     function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_) {
@@ -159,12 +161,12 @@ contract Vault is IVault {
         internal
         returns (uint256 rewardsPerShare_)
     {
-        _rewardsPerShare += (timeStamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
+        _lastRewardsPerShare += (timeStamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / totalShares;
         _lastRewardUpdateTime = timeStamp_;
         if (positiveVariation_) totalShares += shareVariation_;
         else totalShares -= shareVariation_;
 
-        rewardsPerShare_ = _rewardsPerShare;
+        rewardsPerShare_ = _lastRewardsPerShare;
     }
 
     function maintainDepositList() internal {
