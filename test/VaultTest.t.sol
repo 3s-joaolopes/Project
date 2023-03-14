@@ -8,17 +8,9 @@ import { IERC20 } from "@openzeppelin/token/ERC20/IERC20.sol";
 import { Vault } from "../src/src-default/Vault.sol";
 import { IVault } from "../src/src-default/interfaces/IVault.sol";
 import { Token } from "../src/src-default/Token.sol";
-import { WETH9 } from "../src/src-default/WETH9.sol";
+import { WETH9 } from "./WETH9.sol";
 
 contract VaultTest is Test {
-    error Unauthorized();
-    error AlreadyInitializedError();
-    error NoAssetToWithdrawError();
-    error NoRewardsToClaimError();
-    error InvalidHintError();
-    error InvalidLockPeriodError();
-    error InsuficientDepositAmountError();
-
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100 ether;
     uint256 public constant UNISWAP_INITIAL_WETH_RESERVE = 100 ether;
@@ -45,14 +37,14 @@ contract VaultTest is Test {
 
     function testVault_AlreadyInitialized() external {
         vm.startPrank(alice);
-        vm.expectRevert(AlreadyInitializedError.selector);
+        vm.expectRevert(IVault.AlreadyInitializedError.selector);
         vault.initialize(address(0));
         vm.stopPrank();
     }
 
     function testVault_Unauthorized() external {
         vm.startPrank(alice);
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(IVault.Unauthorized.selector);
         vault.upgrade(address(0));
         vm.stopPrank();
     }
@@ -61,9 +53,9 @@ contract VaultTest is Test {
         // Alice tries to claim rewards and withdraw deposit without depositing
         vm.startPrank(alice);
         uint256[] memory depositIds = vault.getDepositIds(alice);
-        vm.expectRevert(NoRewardsToClaimError.selector);
+        vm.expectRevert(IVault.NoRewardsToClaimError.selector);
         vault.claimRewards(depositIds);
-        vm.expectRevert(NoAssetToWithdrawError.selector);
+        vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
     }
@@ -71,7 +63,7 @@ contract VaultTest is Test {
     function testVault_InsuficientDepositAmount() external {
         vm.startPrank(alice);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
-        vm.expectRevert(InsuficientDepositAmountError.selector);
+        vm.expectRevert(IVault.InsuficientDepositAmountError.selector);
         vault.deposit(1, 6, 100);
         vm.stopPrank();
     }
@@ -82,12 +74,12 @@ contract VaultTest is Test {
         uint256 monthsLocked = 10;
         uint256 hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
-        vm.expectRevert(InvalidLockPeriodError.selector);
+        vm.expectRevert(IVault.InvalidLockPeriodError.selector);
         vault.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
         vm.stopPrank();
     }
 
-    function testVault_scenario1() external {
+    function testVault_Scenario1() external {
         uint256 monthsLocked;
         uint256 hint;
         uint256[] memory depositIds;
@@ -109,9 +101,9 @@ contract VaultTest is Test {
         // Bob tries to claim rewards and withdraw deposit
         vm.startPrank(bob);
         depositIds = vault.getDepositIds(bob);
-        vm.expectRevert(NoRewardsToClaimError.selector);
+        vm.expectRevert(IVault.NoRewardsToClaimError.selector);
         vault.claimRewards(depositIds);
-        vm.expectRevert(NoAssetToWithdrawError.selector);
+        vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
 
@@ -128,7 +120,7 @@ contract VaultTest is Test {
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", 317 * SECONDS_IN_30_DAYS * 3);
-        vm.expectRevert(NoAssetToWithdrawError.selector);
+        vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
 
@@ -158,7 +150,7 @@ contract VaultTest is Test {
             "->",
             317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 2
         );
-        vm.expectRevert(NoAssetToWithdrawError.selector);
+        vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
 
@@ -168,7 +160,7 @@ contract VaultTest is Test {
         // Alice tries to claim bob's rewards
         vm.startPrank(alice);
         depositIds = vault.getDepositIds(bob);
-        vm.expectRevert(InvalidHintError.selector);
+        vm.expectRevert(IVault.InvalidHintError.selector);
         vault.claimRewards(depositIds);
         vm.stopPrank();
 

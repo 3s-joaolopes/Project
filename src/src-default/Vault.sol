@@ -53,7 +53,7 @@ contract Vault is IVault {
         if (monthsLocked_ != 6 && monthsLocked_ != 12 && monthsLocked_ != 24 && monthsLocked_ != 48) {
             revert InvalidLockPeriodError();
         }
-        if(amount_ < MINIMUM_DEPOSIT_AMOUNT) revert InsuficientDepositAmountError();
+        if (amount_ < MINIMUM_DEPOSIT_AMOUNT) revert InsuficientDepositAmountError();
 
         maintainDepositList();
         uint256 expireTime = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
