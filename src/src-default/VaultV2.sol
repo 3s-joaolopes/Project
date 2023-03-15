@@ -13,7 +13,8 @@ import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol
 contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     uint256 constant REWARDS_PER_SECOND = 317 ether; // 1 ether * 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
-    uint256 constant LIST_START_ID = 1;
+    uint256 constant DEPOSIT_LIST_START_ID = 1;
+    uint16 constant CHAIN_LIST_START_ID = 0;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
     uint256 constant SEND_VALUE = 0.01 ether;
 
@@ -26,7 +27,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
 
     mapping(address => uint256) private _withdrawableAssets;
     mapping(address => int256) private _pendingRewards; //can be negative
-    mapping(address => bool) private _trustedVaults;
+    mapping(uint16 => bytes) private _trustedRemoteLookup;
+    mapping(uint16 => uint16) private _chainIdList;
     mapping(uint256 => Deposit) private _depositList;
 
     IERC20 public asset;
@@ -39,7 +41,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     }
 
     /// @dev Acts as the constructor
-    function initialize(address asset_, address lzEndpoint_, address[] calldata trustedVaults_) external {
+    function initialize(address asset_, address lzEndpoint_) external {
         if (_initialized) revert AlreadyInitializedError();
         _initialized = true;
 
@@ -50,10 +52,6 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
 
         _idCounter = 2;
         _lastRewardUpdateTime = block.timestamp;
-
-        for (uint256 i = 0; i < trustedVaults_.length; i++) {
-            _trustedVaults[trustedVaults_[i]] = true;
-        }
     }
 
     function deposit(uint256 amount_, uint256 monthsLocked_, uint256 hint_) external override {
@@ -108,14 +106,19 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         override
     {
         if (msg.sender != address(lzEndpoint)) revert NotEndpoint();
+        bytes memory trustedRemote = _trustedRemoteLookup[_srcChainId];
+        if (
+            _srcAddress.length != trustedRemote.length || trustedRemote.length == 0
+                || keccak256(_srcAddress) != keccak256(trustedRemote)
+        ) {
+            revert NotTrustedSource();
+        }
+        maintainDepositList();
+
         address fromAddress;
         assembly {
             fromAddress := mload(add(_srcAddress, 20))
         }
-        if (_trustedVaults[fromAddress] == false) revert NotTrustedVault();
-
-        maintainDepositList();
-
         (uint256 shares, uint256 depositTime, uint256 expireTime) = abi.decode(_payload, (uint256, uint256, uint256));
         uint256 hint = getInsertPosition(expireTime);
         _depositList[_idCounter].expireTime = expireTime;
@@ -126,6 +129,13 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         _idCounter++;
 
         emit LogOmnichainDeposit(_srcChainId, fromAddress, shares, depositTime, expireTime);
+    }
+
+    function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external onlyOwner {
+        _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_START_ID];
+        _chainIdList[CHAIN_LIST_START_ID] = remoteChainId_;
+        _trustedRemoteLookup[remoteChainId_] = abi.encodePacked(remoteAddress_, address(this));
+        emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
     }
 
     function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
@@ -155,7 +165,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     }
 
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
-        hint_ = LIST_START_ID;
+        hint_ = DEPOSIT_LIST_START_ID;
         uint256 nextId = _depositList[hint_].nextId;
         while (nextId != 0) {
             if (_depositList[nextId].expireTime >= expireTime_) break;
@@ -165,7 +175,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     }
 
     function getDepositIds(address depositor_) external view override returns (uint256[] memory depositIds_) {
-        uint256 id = _depositList[LIST_START_ID].nextId;
+        uint256 id = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint256 arraysize;
         while (id != 0) {
             if (_depositList[id].depositor == depositor_) arraysize++;
@@ -173,7 +183,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         }
         depositIds_ = new uint256[](arraysize);
 
-        id = _depositList[LIST_START_ID].nextId;
+        id = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint256 i;
         while (id != 0) {
             if (_depositList[id].depositor == depositor_) {
@@ -185,7 +195,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     }
 
     function maintainDepositList() internal {
-        uint256 id = _depositList[LIST_START_ID].nextId;
+        uint256 id = _depositList[DEPOSIT_LIST_START_ID].nextId;
         while (id != 0 && _depositList[id].expireTime <= block.timestamp) {
             uint256 rewardsPerShare = updateRewardsPerShare(_depositList[id].shares, false, _depositList[id].expireTime);
 
@@ -200,22 +210,27 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
             delete _depositList[id];
 
             id = nextId;
-            _depositList[LIST_START_ID].nextId = nextId;
+            _depositList[DEPOSIT_LIST_START_ID].nextId = nextId;
         }
     }
 
     function broadcastDeposit(uint256 shares, uint256 expireTime) internal {
-        bytes memory remoteAndLocalAddresses = abi.encodePacked(address(0), address(0));
         bytes memory payload = abi.encodePacked(shares, block.timestamp, expireTime);
 
-        lzEndpoint.send{ value: SEND_VALUE }(
-            10_001, // destination LayerZero chainId
-            remoteAndLocalAddresses, // send to this address on the destination
-            payload, // bytes payload
-            payable(msg.sender), // refund address
-            address(0x0), // future parameter
-            bytes("") // adapterParams (see "Advanced Features")
-        );
+        uint16 chainId = _chainIdList[CHAIN_LIST_START_ID];
+        while (chainId != 0) {
+            bytes memory trustedRemote = _trustedRemoteLookup[chainId];
+
+            lzEndpoint.send{ value: SEND_VALUE }(
+                chainId, // destination LayerZero chainId
+                trustedRemote, // send to this address on the destination
+                payload, // bytes payload
+                payable(msg.sender), // refund address
+                address(0x0), // future parameter
+                bytes("") // adapterParams (see "Advanced Features")
+            );
+            chainId = _chainIdList[chainId];
+        }
     }
 
     function getRewardsPerShare(uint256 timestamp_) internal view returns (uint256 rewardsPerShare_) {

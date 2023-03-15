@@ -7,7 +7,8 @@ interface IVaultV2 is IVault {
     event LogOmnichainDeposit(
         uint256 srcChainId_, address fromAddress_, uint256 shares_, uint256 depositTime_, uint256 expiretime_
     );
+    event LogTrustedRemoteAddress(uint16 _remoteChainId, bytes _remoteAddress);
 
     error NotEndpoint();
-    error NotTrustedVault();
+    error NotTrustedSource();
 }
