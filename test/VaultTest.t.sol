@@ -103,9 +103,9 @@ contract VaultTest is Test, VaultFixture {
         vm.startPrank(bob);
         monthsLocked = 6;
         hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
-        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE/2);
-        vault.deposit(BOB_INITIAL_LP_BALANCE/2, monthsLocked, hint);
-        require(LPtoken.balanceOf(bob) == BOB_INITIAL_LP_BALANCE/2, "Failed to assert bob balance after deposit");
+        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE / 2);
+        vault.deposit(BOB_INITIAL_LP_BALANCE / 2, monthsLocked, hint);
+        require(LPtoken.balanceOf(bob) == BOB_INITIAL_LP_BALANCE / 2, "Failed to assert bob balance after deposit");
 
         // Fast-forward 3 months
         vm.warp(time += 3 * SECONDS_IN_30_DAYS);
@@ -113,8 +113,8 @@ contract VaultTest is Test, VaultFixture {
         // Bob makes another deposit for half his LPtokens (this time locked for 12 months)
         monthsLocked = 12;
         hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
-        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE/2);
-        vault.deposit(BOB_INITIAL_LP_BALANCE/2, monthsLocked, hint);
+        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE / 2);
+        vault.deposit(BOB_INITIAL_LP_BALANCE / 2, monthsLocked, hint);
         require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
 
         // Bob claims rewards
