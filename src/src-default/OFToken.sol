@@ -7,11 +7,29 @@ import "@layerZero/token/OFT/IOFT.sol";
 import "@layerZero/token/OFT/OFTCore.sol";
 
 // override decimal() function is needed
-contract OFT is OFTCore, ERC20, IOFT {
-    constructor(string memory _name, string memory _symbol, address _lzEndpoint)
+contract OFToken is OFTCore, ERC20, IOFT {
+    address private _owner;
+
+    error Unauthorized();
+
+    modifier onlyOwner_() {
+        if (msg.sender != _owner) revert Unauthorized();
+        _;
+    }
+
+    constructor(address owner_, string memory _name, string memory _symbol, address _lzEndpoint)
         ERC20(_name, _symbol)
         OFTCore(_lzEndpoint)
-    { }
+    {
+        _owner = owner_;
+    }
+
+    /// @dev Mint tokens to receiver
+    /// @param receiver_ Receiver of the tokens
+    /// @param amount_   Amount of tokens to mint
+    function mintRewards(address receiver_, uint256 amount_) external onlyOwner_ {
+        _mint(receiver_, amount_);
+    }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(OFTCore, IERC165) returns (bool) {
         return interfaceId == type(IOFT).interfaceId || interfaceId == type(IERC20).interfaceId

@@ -14,7 +14,7 @@ interface IVault {
     event LogDeposit(address indexed address_, uint256 amount_, uint256 monthsLocked_);
     event LogWithdraw(address indexed address_, uint256 amount_);
     event LogClaimRewards(address indexed address_, uint256 amount_);
-    event LogExpiredDeposit(address indexed address_, uint256 deposit, uint256 rewards);
+    event LogExpiredDeposit(address indexed address_, uint256 deposit_, uint256 rewards_);
 
     error Unauthorized();
     error AlreadyInitializedError();
