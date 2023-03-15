@@ -115,7 +115,7 @@ contract Vault is IVault, UUPSUpgradeable {
         }
         amount += _pendingRewards[depositor_];
 
-        amount_ = uint256(amount/1 ether);
+        amount_ = uint256(amount / 1 ether);
     }
 
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
