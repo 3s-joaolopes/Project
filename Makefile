@@ -16,7 +16,8 @@ remove :;
 install :;
 	@forge install foundry-rs/forge-std@master --no-commit && \
 	forge install openzeppelin/openzeppelin-contracts@master --no-commit &&\
-	forge install openzeppelin/openzeppelin-contracts-upgradeable --no-commit
+	forge install openzeppelin/openzeppelin-contracts-upgradeable --no-commit &&\
+	forge install LayerZero-Labs/solidity-examples --no-commit
 
 # Update dependencies
 update :;
