@@ -7,7 +7,7 @@ import { IVault } from "./interfaces/IVault.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract Vault is IVault, UUPSUpgradeable {
-    uint256 constant REWARDS_PER_SECOND = 317 ether; // ~ 10^10 / 365.25 days (in seconds)
+    uint256 constant REWARDS_PER_SECOND = 317 ether; // 1 ether * 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
