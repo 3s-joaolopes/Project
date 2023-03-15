@@ -34,29 +34,25 @@ interface IVault {
     function withdraw() external;
 
     /// @notice Transfer claimable rewards to msg.sender
+    /// @param  depositIds_  Ids of the deposits held by msg.sender
     function claimRewards(uint256[] calldata depositIds_) external;
 
-    /// @notice The amount of reward tokens that can be claimed by depositor_
-    function claimableRewards(address depositor_, uint256[] calldata depositIds_)
+    /// @notice Get amount of reward tokens that can be claimed by depositor_
+    /// @param  depositor_   address of the depositor
+    /// @param  depositIds_  Ids of the deposits held by depositor_
+    /// @return amount_      amount that can be claimed
+    function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
         external
         view
         returns (uint256 amount_);
 
-    /// @notice The insert position on the sorted list
+    /// @notice Get the insert position on the sorted list
+    /// @param  expireTime_   the expire time of a deposit
+    /// @return hint_       insert position on the sorted list
     function getInsertPosition(uint256 expireTime_) external view returns (uint256 hint_);
 
-    /// @notice The deposits held by a depositor
+    /// @notice Get the deposit ids of the deposits held by a depositor
+    /// @param  depositor_    address of the depositor
+    /// @return depositIds_   deposit ids
     function getDepositIds(address depositor_) external view returns (uint256[] memory depositIds_);
-
-    /// @dev Check if a hint is valid
-    //function isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_);
-
-    /// @dev Mint reward tokens based on time since lastMintTime
-    //function mintRewardTokens() internal;
-
-    /// @dev Close all deposits that have expired
-    //function maintainDepositList() internal;
-
-    /// @dev Verify if the insert positoin in valid
-    //function validPosition(uint256 expireTime_, uint256 hint_) external view returns (bool);
 }
