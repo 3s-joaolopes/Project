@@ -81,8 +81,7 @@ contract VaultTest is Test, VaultFixture {
         // Alice checks claimable rewards
         uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
         depositIds = vault.getDepositIds(alice);
-        console.log("Alice 6 month rewards:", vault.claimableRewards(alice, depositIds), "->", expectedValue);
-        require(similar(vault.claimableRewards(alice, depositIds), expectedValue), "Incorrect claimableRewards");
+        require(similar(vault.getclaimableRewards(alice, depositIds), expectedValue), "Incorrect claimable rewards");
 
         // Alice withdraws her deposit and claims her rewards
         vault.withdraw();

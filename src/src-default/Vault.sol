@@ -84,7 +84,7 @@ contract Vault is IVault, UUPSUpgradeable {
     //would calling msg.sender only 1 improve performance ?
     function claimRewards(uint256[] calldata depositIds_) external override {
         maintainDepositList();
-        uint256 amount = claimableRewards(msg.sender, depositIds_);
+        uint256 amount = getclaimableRewards(msg.sender, depositIds_);
         if (amount == 0) revert NoRewardsToClaimError();
         _pendingRewards[msg.sender] -= int256(amount);
         rewardToken.mintRewards(msg.sender, amount);
@@ -92,7 +92,7 @@ contract Vault is IVault, UUPSUpgradeable {
         emit LogClaimRewards(msg.sender, amount);
     }
 
-    function claimableRewards(address depositor_, uint256[] calldata depositIds_)
+    function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
         public
         view
         override
