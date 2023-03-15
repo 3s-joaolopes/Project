@@ -18,12 +18,9 @@ contract Token is ERC20 {
     }
 
     /// @dev Mint tokens to receiver
-    /// @param amount_ Amount of tokens to mint
+    /// @param receiver_ Receiver of the tokens
+    /// @param amount_   Amount of tokens to mint
     function mintRewards(address receiver_, uint256 amount_) external onlyOwner {
         _mint(receiver_, amount_);
     }
 }
-
-/// @dev Mint tokens to contract owner
-/// @param amount_ Amount of tokens to mint
-//function mintRewards(uint256 amount_) external onlyOwner { }
