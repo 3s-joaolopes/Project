@@ -74,6 +74,7 @@ contract Vault is IVault, UUPSUpgradeable {
     function withdraw() external override {
         maintainDepositList();
         uint256 amount = _withdrawableAssets[msg.sender];
+        _withdrawableAssets[msg.sender] = 0;
         if (amount != 0) asset.transfer(msg.sender, amount);
         else revert NoAssetToWithdrawError();
 
