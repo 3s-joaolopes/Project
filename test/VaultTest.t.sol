@@ -92,6 +92,60 @@ contract VaultTest is Test, VaultFixture {
         vm.stopPrank();
     }
 
+    function testVault_TwoDeposits() external {
+        uint256 monthsLocked;
+        uint256 hint;
+        uint256[] memory depositIds;
+
+        vm.warp(time);
+
+        // Bob deposits half his LPtokens for 6 months
+        vm.startPrank(bob);
+        monthsLocked = 6;
+        hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE/2);
+        vault.deposit(BOB_INITIAL_LP_BALANCE/2, monthsLocked, hint);
+        require(LPtoken.balanceOf(bob) == BOB_INITIAL_LP_BALANCE/2, "Failed to assert bob balance after deposit");
+
+        // Fast-forward 3 months
+        vm.warp(time += 3 * SECONDS_IN_30_DAYS);
+
+        // Bob makes another deposit for half his LPtokens (this time locked for 12 months)
+        monthsLocked = 12;
+        hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE/2);
+        vault.deposit(BOB_INITIAL_LP_BALANCE/2, monthsLocked, hint);
+        require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
+
+        // Bob claims rewards
+        depositIds = vault.getDepositIds(bob);
+        vault.claimRewards(depositIds);
+        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 3;
+        require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (1)");
+
+        // Fast-forward 9 months
+        vm.warp(time += 9 * SECONDS_IN_30_DAYS);
+
+        // Bob withdraws 1st deposit and claims rewards
+        vault.withdraw();
+        depositIds = vault.getDepositIds(bob);
+        vault.claimRewards(depositIds);
+        expectedValue = 317 * SECONDS_IN_30_DAYS * 12;
+        require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (2)");
+
+        // Fast-forward 6 months
+        vm.warp(time += 3 * SECONDS_IN_30_DAYS);
+
+        // Bob withdraws 2nd deposit and claims rewards
+        vault.withdraw();
+        depositIds = vault.getDepositIds(bob);
+        vault.claimRewards(depositIds);
+        expectedValue = 317 * SECONDS_IN_30_DAYS * 15;
+        require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (3)");
+
+        vm.stopPrank();
+    }
+
     function testVault_Scenario1() external {
         uint256 monthsLocked;
         uint256 hint;
