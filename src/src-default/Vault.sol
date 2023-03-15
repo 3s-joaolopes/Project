@@ -148,7 +148,23 @@ contract Vault is IVault, UUPSUpgradeable {
         }
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
+    function maintainDepositList() internal {
+        uint256 id = _depositList[LIST_START_ID].nextId;
+        while (id != 0 && _depositList[id].expireTime <= block.timestamp) {
+            uint256 rewardsPerShare = updateRewardsPerShare(_depositList[id].shares, false, _depositList[id].expireTime);
+            uint256 rewards = (rewardsPerShare - _depositList[id].rewardsPerShare) * _depositList[id].shares;
+            _pendingRewards[_depositList[id].depositor] += int256(rewards);
+
+            _withdrawableAssets[_depositList[id].depositor] += _depositList[id].deposit;
+            emit LogExpiredDeposit(_depositList[id].depositor, _depositList[id].deposit, rewards); //WRONG
+
+            uint256 nextId = _depositList[id].nextId;
+            delete _depositList[id];
+
+            id = nextId;
+            _depositList[LIST_START_ID].nextId = nextId;
+        }
+    }
 
     function getRewardsPerShare(uint256 timestamp_) internal view returns (uint256 rewardsPerShare_) {
         rewardsPerShare_ =
@@ -178,21 +194,5 @@ contract Vault is IVault, UUPSUpgradeable {
         rewardsPerShare_ = _lastRewardsPerShare;
     }
 
-    function maintainDepositList() internal {
-        uint256 id = _depositList[LIST_START_ID].nextId;
-        while (id != 0 && _depositList[id].expireTime <= block.timestamp) {
-            uint256 rewardsPerShare = updateRewardsPerShare(_depositList[id].shares, false, _depositList[id].expireTime);
-            uint256 rewards = (rewardsPerShare - _depositList[id].rewardsPerShare) * _depositList[id].shares;
-            _pendingRewards[_depositList[id].depositor] += int256(rewards);
-
-            _withdrawableAssets[_depositList[id].depositor] += _depositList[id].deposit;
-            emit LogExpiredDeposit(_depositList[id].depositor, _depositList[id].deposit, rewards); //WRONG
-
-            uint256 nextId = _depositList[id].nextId;
-            delete _depositList[id];
-
-            id = nextId;
-            _depositList[LIST_START_ID].nextId = nextId;
-        }
-    }
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
 }
