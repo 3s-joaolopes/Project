@@ -79,7 +79,7 @@ contract VaultTest is Test, VaultFixture {
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
         // Alice checks claimable rewards
-        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
+        uint256 expectedValue = REWARDS_PER_MONTH * 6;
         depositIds = vault.getDepositIds(alice);
         require(similar(vault.getclaimableRewards(alice, depositIds), expectedValue), "Incorrect claimable rewards");
 
@@ -119,7 +119,7 @@ contract VaultTest is Test, VaultFixture {
         // Bob claims rewards
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 3;
+        uint256 expectedValue = REWARDS_PER_MONTH * 3;
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (1)");
 
         // Fast-forward 9 months
@@ -129,7 +129,7 @@ contract VaultTest is Test, VaultFixture {
         vault.withdraw();
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 12;
+        expectedValue = REWARDS_PER_MONTH * 12;
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (2)");
 
         // Fast-forward 6 months
@@ -139,7 +139,7 @@ contract VaultTest is Test, VaultFixture {
         vault.withdraw();
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 15;
+        expectedValue = REWARDS_PER_MONTH * 15;
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards (3)");
 
         vm.stopPrank();
@@ -186,8 +186,8 @@ contract VaultTest is Test, VaultFixture {
         vm.startPrank(alice);
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", 317 * SECONDS_IN_30_DAYS * 3);
-        require(similar(rewardToken.balanceOf(alice), 317 * SECONDS_IN_30_DAYS * 3), "Incorrect rewards 1");
+        console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", REWARDS_PER_MONTH * 3);
+        require(similar(rewardToken.balanceOf(alice), REWARDS_PER_MONTH * 3), "Incorrect rewards 1");
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
@@ -200,7 +200,7 @@ contract VaultTest is Test, VaultFixture {
         vault.withdraw();
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5;
+        expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
         console.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", expectedValue);
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 2");
         vm.stopPrank();
@@ -209,7 +209,7 @@ contract VaultTest is Test, VaultFixture {
         vm.startPrank(bob);
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 2;
+        expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
         console.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", expectedValue);
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 2");
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
@@ -234,13 +234,13 @@ contract VaultTest is Test, VaultFixture {
         vm.stopPrank();
 
         // Print reward token balances
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 3 + 317 * SECONDS_IN_30_DAYS * 3 / 5;
+        expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
         console.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", expectedValue);
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards 3");
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 3 * 4 / 5 + 317 * SECONDS_IN_30_DAYS * 9;
+        expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 9;
         console.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", expectedValue);
         require(similar(rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 4");
-        expectedValue = 317 * SECONDS_IN_30_DAYS * 15;
+        expectedValue = REWARDS_PER_MONTH * 15;
         console.log("Total rewards:", rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), "->", expectedValue);
         require(
             similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), expectedValue), "Incorrect rewards 4"

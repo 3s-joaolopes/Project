@@ -7,7 +7,7 @@ import { IVault } from "./interfaces/IVault.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract Vault is IVault, UUPSUpgradeable {
-    uint256 constant REWARDS_PER_SECOND = 317; // ~ 10^10 / 365.25 days (in seconds)
+    uint256 constant REWARDS_PER_SECOND = 317 ether; // ~ 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
@@ -86,7 +86,7 @@ contract Vault is IVault, UUPSUpgradeable {
         maintainDepositList();
         uint256 amount = getclaimableRewards(msg.sender, depositIds_);
         if (amount == 0) revert NoRewardsToClaimError();
-        _pendingRewards[msg.sender] -= int256(amount);
+        _pendingRewards[msg.sender] -= int256(amount * 1 ether);
         rewardToken.mintRewards(msg.sender, amount);
 
         emit LogClaimRewards(msg.sender, amount);
@@ -115,7 +115,7 @@ contract Vault is IVault, UUPSUpgradeable {
         }
         amount += _pendingRewards[depositor_];
 
-        amount_ = uint256(amount);
+        amount_ = uint256(amount/1 ether);
     }
 
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {

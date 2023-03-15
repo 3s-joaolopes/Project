@@ -62,7 +62,7 @@ contract ProxyTest is Test, VaultFixture {
         vault.withdraw();
         uint256[] memory depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        uint256 expectedValue = 317 * SECONDS_IN_30_DAYS * 6;
+        uint256 expectedValue = REWARDS_PER_MONTH * 6;
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
         vm.stopPrank();
     }
