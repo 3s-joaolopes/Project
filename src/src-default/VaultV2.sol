@@ -5,13 +5,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { OFToken } from "./OFToken.sol";
 import { IVaultV2 } from "./interfaces/IVaultV2.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ILayerZeroReceiver } from "@layerZero/interfaces/ILayerZeroReceiver.sol";
 import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
 
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
-contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
-    uint256 constant REWARDS_PER_SECOND = 317 ether; // 1 ether * 10^10 / 365.25 days (in seconds)
+contract VaultV2 is IVaultV2, UUPSUpgradeable {
+    uint256 constant REWARD_PRECISION = 1 ether;
+    uint256 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant DEPOSIT_LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
@@ -97,7 +97,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         maintainDepositList();
         uint256 amount = getclaimableRewards(msg.sender, depositIds_);
         if (amount == 0) revert NoRewardsToClaimError();
-        _pendingRewards[msg.sender] -= int256(amount * 1 ether);
+        _pendingRewards[msg.sender] -= int256(amount * REWARD_PRECISION);
         rewardToken.mintRewards(msg.sender, amount);
 
         emit LogClaimRewards(msg.sender, amount);
@@ -165,7 +165,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         }
         amount += _pendingRewards[depositor_];
 
-        amount_ = uint256(amount / 1 ether);
+        amount_ = uint256(amount) / REWARD_PRECISION;
     }
 
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
