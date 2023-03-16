@@ -9,6 +9,8 @@ interface IVaultV2 is IVault {
     );
     event LogTrustedRemoteAddress(uint16 _remoteChainId, bytes _remoteAddress);
 
-    error NotEndpoint();
-    error NotTrustedSource();
+    error NotEndpointError();
+    error NotTrustedSourceError();
+    error InvalidChainIdError();
+    error DuplicatingChainIdError();
 }
