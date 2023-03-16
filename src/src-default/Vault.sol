@@ -27,7 +27,7 @@ contract Vault is IVault, UUPSUpgradeable {
     Token public rewardToken;
 
     modifier onlyOwner() {
-        if (msg.sender != _owner) revert Unauthorized();
+        if (msg.sender != _owner) revert UnauthorizedError();
         _;
     }
 

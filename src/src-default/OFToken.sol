@@ -10,10 +10,10 @@ import "@layerZero/token/OFT/OFTCore.sol";
 contract OFToken is OFTCore, ERC20, IOFT {
     address private _owner;
 
-    error Unauthorized();
+    error UnauthorizedError();
 
     modifier onlyOwner_() {
-        if (msg.sender != _owner) revert Unauthorized();
+        if (msg.sender != _owner) revert UnauthorizedError();
         _;
     }
 

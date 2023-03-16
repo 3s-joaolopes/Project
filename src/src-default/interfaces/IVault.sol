@@ -16,7 +16,7 @@ interface IVault {
     event LogClaimRewards(address indexed address_, uint256 amount_);
     event LogExpiredDeposit(address indexed address_, uint256 deposit_, uint256 rewards_);
 
-    error Unauthorized();
+    error UnauthorizedError();
     error AlreadyInitializedError();
     error NoAssetToWithdrawError();
     error NoRewardsToClaimError();

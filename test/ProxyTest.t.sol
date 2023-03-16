@@ -23,7 +23,7 @@ contract ProxyTest is Test, VaultFixture {
 
     function testProxy_Unauthorized() external {
         vm.startPrank(alice);
-        vm.expectRevert(IVault.Unauthorized.selector);
+        vm.expectRevert(IVault.UnauthorizedError.selector);
         vault.upgradeTo(address(0));
         vm.stopPrank();
     }
