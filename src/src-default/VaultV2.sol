@@ -113,7 +113,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
             _srcAddress.length != trustedRemote.length || trustedRemote.length == 0
                 
         ) {
-            revert NotTrustedSourceError(); //|| keccak256(_srcAddress) != keccak256(trustedRemote)
+            revert NotTrustedSourceError(); //|| keccak256(_srcAddress) != keccak256(trustedRemote) 
         }
         maintainDepositList();
 
