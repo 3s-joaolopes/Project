@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "@layerZero/token/OFT/IOFT.sol";
-import "@layerZero/token/OFT/OFTCore.sol";
+import "@layerZero/token/oft/IOFT.sol";
+import "@layerZero/token/oft/OFTCore.sol";
 
 // override decimal() function is needed
 contract OFToken is OFTCore, ERC20, IOFT {
