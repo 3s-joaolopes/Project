@@ -9,9 +9,15 @@ import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
+import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
 contract VaultV2Test is Test, VaultFixture {
     address public lzEndpoint;
+    uint16 constant CHAIN_ID_1 = 1;
+    uint16 constant CHAIN_ID_2 = 2;
+
+    LZEndpointMock endpoint1;
+    LZEndpointMock endpoint2;
 
     function setUp() public override {
         super.setUp();
@@ -25,6 +31,9 @@ contract VaultV2Test is Test, VaultFixture {
         vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
         vm.stopPrank();
         rewardToken = vault.rewardToken();
+
+        endpoint1 = new LZEndpointMock(CHAIN_ID_1);
+        endpoint2 = new LZEndpointMock(CHAIN_ID_2);
     }
 
     function testOFToken_transfer() external {
