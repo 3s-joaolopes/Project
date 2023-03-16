@@ -63,6 +63,7 @@ contract Vault is IVault, UUPSUpgradeable {
         _depositList[_idCounter].deposit = amount_;
         _depositList[_idCounter].shares = shares;
         _depositList[_idCounter].rewardsPerShare = updateRewardsPerShare(shares, true, block.timestamp);
+        _depositList[_idCounter].nextId = _depositList[hint].nextId;
 
         _depositList[hint].nextId = _idCounter;
         _idCounter++;
