@@ -14,9 +14,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     uint256 constant REWARDS_PER_SECOND = 317 ether; // 1 ether * 10^10 / 365.25 days (in seconds)
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant DEPOSIT_LIST_START_ID = 1;
-    uint16 constant CHAIN_LIST_START_ID = 0;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
     uint256 constant SEND_VALUE = 0.01 ether;
+    uint16 constant CHAIN_LIST_SEPARATOR = 998;
 
     bool private _initialized;
     address private _owner;
@@ -36,7 +36,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     ILayerZeroEndpoint private lzEndpoint;
 
     modifier onlyOwner() {
-        if (msg.sender != _owner) revert Unauthorized();
+        if (msg.sender != _owner) revert UnauthorizedError();
         _;
     }
 
@@ -49,6 +49,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         asset = IERC20(asset_);
         lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
         _owner = msg.sender;
+
+        _chainIdList[CHAIN_LIST_SEPARATOR] = CHAIN_LIST_SEPARATOR;
 
         _idCounter = 2;
         _lastRewardUpdateTime = block.timestamp;
@@ -105,13 +107,13 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
         external
         override
     {
-        if (msg.sender != address(lzEndpoint)) revert NotEndpoint();
+        if (msg.sender != address(lzEndpoint)) revert NotEndpointError();
         bytes memory trustedRemote = _trustedRemoteLookup[_srcChainId];
         if (
             _srcAddress.length != trustedRemote.length || trustedRemote.length == 0
                 || keccak256(_srcAddress) != keccak256(trustedRemote)
         ) {
-            revert NotTrustedSource();
+            revert NotTrustedSourceError();
         }
         maintainDepositList();
 
@@ -132,8 +134,10 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     }
 
     function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external onlyOwner {
-        _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_START_ID];
-        _chainIdList[CHAIN_LIST_START_ID] = remoteChainId_;
+        if (remoteChainId_ == CHAIN_LIST_SEPARATOR) revert InvalidChainIdError();
+        if (_chainIdList[remoteChainId_] != 0) revert DuplicatingChainIdError();
+        _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_SEPARATOR];
+        _chainIdList[CHAIN_LIST_SEPARATOR] = remoteChainId_;
         _trustedRemoteLookup[remoteChainId_] = abi.encodePacked(remoteAddress_, address(this));
         emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
     }
@@ -217,8 +221,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, ILayerZeroReceiver {
     function broadcastDeposit(uint256 shares, uint256 expireTime) internal {
         bytes memory payload = abi.encodePacked(shares, block.timestamp, expireTime);
 
-        uint16 chainId = _chainIdList[CHAIN_LIST_START_ID];
-        while (chainId != 0) {
+        uint16 chainId = _chainIdList[CHAIN_LIST_SEPARATOR];
+        while (chainId != CHAIN_LIST_SEPARATOR) {
             bytes memory trustedRemote = _trustedRemoteLookup[chainId];
 
             lzEndpoint.send{ value: SEND_VALUE }(
