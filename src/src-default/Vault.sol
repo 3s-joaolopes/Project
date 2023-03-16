@@ -13,13 +13,14 @@ contract Vault is IVault, UUPSUpgradeable {
     uint256 constant LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
 
-    bool private _initialized;
+
     address private _owner;
     uint256 private _totalShares;
     uint256 private _lastRewardUpdateTime;
     uint256 private _lastRewardsPerShare;
     uint256 private _idCounter;
-
+    bool private _initialized;
+    
     mapping(address => uint256) private _withdrawableAssets;
     mapping(address => int256) private _pendingRewards; //can be negative
     mapping(uint256 => Deposit) private _depositList;
