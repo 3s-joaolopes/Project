@@ -27,13 +27,16 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
 
     mapping(address => uint256) private _withdrawableAssets;
     mapping(address => int256) private _pendingRewards; // can be negative
-    mapping(uint16 => bytes) private _trustedRemoteLookup;
-    mapping(uint16 => uint16) private _chainIdList;
     mapping(uint256 => Deposit) private _depositList;
 
     IERC20 public asset;
     OFToken public rewardToken;
-    ILayerZeroEndpoint private lzEndpoint;
+
+    // New storage variables
+    mapping(uint16 => bytes) private _trustedRemoteLookup;
+    mapping(uint16 => uint16) private _chainIdList;
+
+    ILayerZeroEndpoint private _lzEndpoint;
 
     modifier onlyOwner() {
         if (msg.sender != _owner) revert UnauthorizedError();
@@ -47,7 +50,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
 
         rewardToken = new OFToken(address(this), "Token", "TKN", lzEndpoint_);
         asset = IERC20(asset_);
-        lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
+        _lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
         _owner = msg.sender;
 
         _chainIdList[CHAIN_LIST_SEPARATOR] = CHAIN_LIST_SEPARATOR;
@@ -107,13 +110,13 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         external
         override
     {
-        if (msg.sender != address(lzEndpoint)) revert NotEndpointError();
+        if (msg.sender != address(_lzEndpoint)) revert NotEndpointError();
         bytes memory trustedRemote = _trustedRemoteLookup[_srcChainId];
         if (
             _srcAddress.length != trustedRemote.length || trustedRemote.length == 0
-                
+                || keccak256(_srcAddress) != keccak256(trustedRemote)
         ) {
-            revert NotTrustedSourceError(); //|| keccak256(_srcAddress) != keccak256(trustedRemote) 
+            revert NotTrustedSourceError();
         }
         maintainDepositList();
 
@@ -226,10 +229,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         uint16 chainId = _chainIdList[CHAIN_LIST_SEPARATOR];
 
         while (chainId != CHAIN_LIST_SEPARATOR) {
-
             bytes memory trustedRemote = _trustedRemoteLookup[chainId];
 
-            lzEndpoint.send{ value: SEND_VALUE }(
+            _lzEndpoint.send{ value: SEND_VALUE }(
                 chainId, // destination LayerZero chainId
                 trustedRemote, // send to this address on the destination
                 payload, // bytes payload
