@@ -19,14 +19,12 @@ contract VaultFixture is Test {
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1000;
     uint256 public constant BOB_INITIAL_LP_BALANCE = 2000;
 
-    IERC20 public LPtoken;
-    Token public rewardToken;
-    Vault public vault;
-
     address public deployer = vm.addr(1000);
     address public alice = vm.addr(1500);
     address public bob = vm.addr(1501);
     uint256 public time = 1000;
+
+    IERC20 public LPtoken;
 
     function setUp() public virtual {
         setUpUniswap();

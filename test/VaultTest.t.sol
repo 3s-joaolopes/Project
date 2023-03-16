@@ -6,8 +6,12 @@ import "@forge-std/Test.sol"; // to get console.log
 import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
+import { Token } from "src/src-default/Token.sol";
 
 contract VaultTest is Test, VaultFixture {
+    Token public rewardToken;
+    Vault public vault;
+
     function setUp() public override {
         super.setUp();
 

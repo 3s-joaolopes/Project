@@ -8,8 +8,12 @@ import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
+import { Token } from "src/src-default/Token.sol";
 
 contract ProxyTest is Test, VaultFixture {
+    Token public rewardToken;
+    Vault public vault;
+
     function setUp() public override {
         super.setUp();
 
