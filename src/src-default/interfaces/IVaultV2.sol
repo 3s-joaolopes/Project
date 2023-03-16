@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import { IVault } from "./IVault.sol";
+import { ILayerZeroReceiver } from "@layerZero/interfaces/ILayerZeroReceiver.sol";
 
-interface IVaultV2 is IVault {
+interface IVaultV2 is IVault, ILayerZeroReceiver {
     event LogOmnichainDeposit(
         uint256 srcChainId_, address fromAddress_, uint256 shares_, uint256 depositTime_, uint256 expiretime_
     );
