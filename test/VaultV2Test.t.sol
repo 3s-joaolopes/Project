@@ -12,32 +12,35 @@ import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
 contract VaultV2Test is Test, VaultFixture {
-    address public lzEndpoint;
     uint16 constant CHAIN_ID_1 = 1;
     uint16 constant CHAIN_ID_2 = 2;
 
     LZEndpointMock endpoint1;
     LZEndpointMock endpoint2;
 
+    VaultV2 public vaultv2_chain1;
+    VaultV2 public vaultv2_chain2;
+
     function setUp() public override {
         super.setUp();
 
-        lzEndpoint = address(0);
-
-        VaultV2 vaultImplementation = new VaultV2();
-        bytes memory initializeData =
-            abi.encodeWithSignature("initialize(address,address)", address(LPtoken), lzEndpoint);
-        vm.startPrank(deployer);
-        vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
-        vm.stopPrank();
-        rewardToken = vault.rewardToken();
-
         endpoint1 = new LZEndpointMock(CHAIN_ID_1);
         endpoint2 = new LZEndpointMock(CHAIN_ID_2);
+        endpoint1.setDestLzEndpoint(address(vaultv2_chain2), address(endpoint1));
+        endpoint2.setDestLzEndpoint(address(vaultv2_chain1), address(endpoint2));
+
+        VaultV2 vaultImplementation = new VaultV2();
+
+        vm.startPrank(deployer);
+        bytes memory initializeData =
+            abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint1));
+        vaultv2_chain1 = VaultV2(address(new UUPSProxy(address(vaultImplementation), initializeData)));
+        rewardToken = vaultv2_chain1.rewardToken();
+        vm.stopPrank();
     }
 
     function testOFToken_transfer() external {
-        OFToken token = new OFToken(alice, "Token", "TKN", lzEndpoint);
+        OFToken token = new OFToken(alice, "Token", "TKN", (endpoint1));
 
         vm.startPrank(bob);
         vm.expectRevert(OFToken.UnauthorizedError.selector);
@@ -58,18 +61,18 @@ contract VaultV2Test is Test, VaultFixture {
         // Alice deposits all her LPtokens for 6 months
         vm.startPrank(alice);
         uint256 monthsLocked = 6;
-        uint256 hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
-        LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
-        vault.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
+        uint256 hint = vaultv2_chain1.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
+        vaultv2_chain1.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
 
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
         // Alice withdraws her deposit and claims her rewards
-        vault.withdraw();
-        uint256[] memory depositIds = vault.getDepositIds(alice);
-        vault.claimRewards(depositIds);
+        vaultv2_chain1.withdraw();
+        uint256[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
+        vaultv2_chain1.claimRewards(depositIds);
         uint256 expectedValue = REWARDS_PER_MONTH * 6;
         require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
         vm.stopPrank();
