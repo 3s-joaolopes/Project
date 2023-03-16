@@ -15,18 +15,18 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant DEPOSIT_LIST_START_ID = 1;
     uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
-    uint256 constant SEND_VALUE = 0.01 ether;
+    uint256 constant SEND_VALUE = 1 ether;
     uint16 constant CHAIN_LIST_SEPARATOR = 998;
 
-    bool private _initialized;
     address private _owner;
     uint256 private _totalShares;
     uint256 private _lastRewardUpdateTime;
     uint256 private _lastRewardsPerShare;
     uint256 private _idCounter;
+    bool private _initialized;
 
     mapping(address => uint256) private _withdrawableAssets;
-    mapping(address => int256) private _pendingRewards; //can be negative
+    mapping(address => int256) private _pendingRewards; // can be negative
     mapping(uint16 => bytes) private _trustedRemoteLookup;
     mapping(uint16 => uint16) private _chainIdList;
     mapping(uint256 => Deposit) private _depositList;
@@ -111,9 +111,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         bytes memory trustedRemote = _trustedRemoteLookup[_srcChainId];
         if (
             _srcAddress.length != trustedRemote.length || trustedRemote.length == 0
-                || keccak256(_srcAddress) != keccak256(trustedRemote)
+                
         ) {
-            revert NotTrustedSourceError();
+            revert NotTrustedSourceError(); //|| keccak256(_srcAddress) != keccak256(trustedRemote)
         }
         maintainDepositList();
 
@@ -138,7 +138,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         if (_chainIdList[remoteChainId_] != 0) revert DuplicatingChainIdError();
         _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_SEPARATOR];
         _chainIdList[CHAIN_LIST_SEPARATOR] = remoteChainId_;
-        _trustedRemoteLookup[remoteChainId_] = abi.encodePacked(remoteAddress_, address(this));
+        //_trustedRemoteLookup[remoteChainId_] = abi.encodePacked(remoteAddress_, address(this));
+        _trustedRemoteLookup[remoteChainId_] = remoteAddress_;
+
         emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
     }
 
@@ -222,7 +224,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         bytes memory payload = abi.encodePacked(shares, block.timestamp, expireTime);
 
         uint16 chainId = _chainIdList[CHAIN_LIST_SEPARATOR];
+
         while (chainId != CHAIN_LIST_SEPARATOR) {
+
             bytes memory trustedRemote = _trustedRemoteLookup[chainId];
 
             lzEndpoint.send{ value: SEND_VALUE }(
