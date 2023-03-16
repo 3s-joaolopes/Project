@@ -253,7 +253,6 @@ contract VaultTest is Test, VaultFixture {
         // Check if withdrawls were successful
         uint256 balance = LPtoken.balanceOf(alice);
         require(balance == ALICE_INITIAL_LP_BALANCE, "Failed to assert alice's balance");
-
         balance = LPtoken.balanceOf(bob);
         require(balance == BOB_INITIAL_LP_BALANCE, "Failed to assert bob's balance");
     }
