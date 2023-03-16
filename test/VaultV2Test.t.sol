@@ -21,6 +21,9 @@ contract VaultV2Test is Test, VaultFixture {
     VaultV2 public vaultv2_chain1;
     VaultV2 public vaultv2_chain2;
 
+    OFToken public rewardToken_chain1;
+    OFToken public rewardToken_chain2;
+
     function setUp() public override {
         super.setUp();
 
@@ -35,12 +38,12 @@ contract VaultV2Test is Test, VaultFixture {
         bytes memory initializeData =
             abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint1));
         vaultv2_chain1 = VaultV2(address(new UUPSProxy(address(vaultImplementation), initializeData)));
-        rewardToken = vaultv2_chain1.rewardToken();
+        rewardToken_chain1 = vaultv2_chain1.rewardToken();
         vm.stopPrank();
     }
 
     function testOFToken_transfer() external {
-        OFToken token = new OFToken(alice, "Token", "TKN", (endpoint1));
+        OFToken token = new OFToken(alice, "Token", "TKN", address(endpoint1));
 
         vm.startPrank(bob);
         vm.expectRevert(OFToken.UnauthorizedError.selector);
@@ -74,7 +77,7 @@ contract VaultV2Test is Test, VaultFixture {
         uint256[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
         uint256 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
+        require(similar(rewardToken_chain1.balanceOf(alice), expectedValue), "Incorrect rewards");
         vm.stopPrank();
     }
 }
