@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "@layerZero/token/oft/IOFT.sol";
-import "@layerZero/token/oft/OFTCore.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {IOFT} from "@layerZero/token/oft/IOFT.sol";
+import {OFTCore} from "@layerZero/token/oft/OFTCore.sol";
 
 // override decimal() function is needed
 contract OFToken is OFTCore, ERC20, IOFT {
