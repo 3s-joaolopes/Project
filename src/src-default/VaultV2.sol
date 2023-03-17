@@ -7,7 +7,7 @@ import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgra
 import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
 import { IVault } from "./interfaces/IVault.sol";
 import { IVaultV2 } from "./interfaces/IVaultV2.sol";
-import { ILayerZeroReceiver } from "@layerZero/interfaces/ILayerZeroReceiver.sol";
+import { ILayerZeroReceiver } from "./interfaces/dependencies/ILayerZeroReceiver.sol";
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
 contract VaultV2 is IVaultV2, UUPSUpgradeable {
@@ -113,15 +113,15 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     /// @inheritdoc ILayerZeroReceiver
-    function lzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64, bytes calldata _payload)
+    function lzReceive(uint16 srcChainId_, bytes memory srcAddress_, uint64, bytes calldata payload_)
         external
         override
     {
         if (msg.sender != address(_lzEndpoint)) revert NotEndpointError();
-        bytes memory trustedRemote_ = _trustedRemoteLookup[_srcChainId];
+        bytes memory trustedRemote_ = _trustedRemoteLookup[srcChainId_];
         if (
-            _srcAddress.length != trustedRemote_.length || trustedRemote_.length == 0
-                || keccak256(_srcAddress) != keccak256(trustedRemote_)
+            srcAddress_.length != trustedRemote_.length || trustedRemote_.length == 0
+                || keccak256(srcAddress_) != keccak256(trustedRemote_)
         ) {
             revert NotTrustedSourceError();
         }
@@ -129,9 +129,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
 
         address fromAddress_;
         assembly {
-            fromAddress_ := mload(add(_srcAddress, 20))
+            fromAddress_ := mload(add(srcAddress_, 20))
         }
-        (uint256 shares_, uint256 depositTime_, uint256 expireTime_) = abi.decode(_payload, (uint256, uint256, uint256));
+        (uint256 shares_, uint256 depositTime_, uint256 expireTime_) = abi.decode(payload_, (uint256, uint256, uint256));
         uint256 hint_ = getInsertPosition(expireTime_);
         _depositList[_idCounter].expireTime = expireTime_;
         _depositList[_idCounter].shares = shares_;
@@ -140,7 +140,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         _depositList[hint_].nextId = _idCounter;
         _idCounter++;
 
-        emit LogOmnichainDeposit(_srcChainId, fromAddress_, shares_, depositTime_, expireTime_);
+        emit LogOmnichainDeposit(srcChainId_, fromAddress_, shares_, depositTime_, expireTime_);
     }
 
     /// @inheritdoc IVaultV2
@@ -156,6 +156,11 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         _trustedRemoteLookup[remoteChainId_] = remoteAddress_;
 
         emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
+    }
+
+    /// @inheritdoc IVault
+    function getWithdrawableAmount(address depositor_) external view override returns (uint256 amount_) {
+        amount_ = _withdrawableAssets[depositor_];
     }
 
     /// @inheritdoc IVault

@@ -96,6 +96,11 @@ contract Vault is IVault, UUPSUpgradeable {
     }
 
     /// @inheritdoc IVault
+    function getWithdrawableAmount(address depositor_) external view override returns (uint256 amount_) {
+        amount_ = _withdrawableAssets[depositor_];
+    }
+
+    /// @inheritdoc IVault
     function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
         public
         view

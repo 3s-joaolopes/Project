@@ -38,6 +38,11 @@ interface IVault {
     /// @param  depositIds_  Ids of the deposits held by msg.sender
     function claimRewards(uint256[] calldata depositIds_) external;
 
+    /// @notice Get the deposit ids of the deposits held by a depositor
+    /// @param  depositor_    address of the depositor
+    /// @return amount_   deposit ids
+    function getWithdrawableAmount(address depositor_) external view returns (uint256 amount_);
+
     /// @notice Get amount of reward tokens that can be claimed by depositor_
     /// @param  depositor_   address of the depositor
     /// @param  depositIds_  Ids of the deposits held by depositor_
