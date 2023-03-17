@@ -68,7 +68,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
 
         _maintainDepositList();
         uint256 expireTime_ = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
-        uint256 hint = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
+        uint256 insertPosition_ = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
         uint256 shares_ = amount_ * (monthsLocked_ / 6);
         asset.transferFrom(msg.sender, address(this), amount_);
 
@@ -77,9 +77,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         _depositList[_idCounter].deposit = amount_;
         _depositList[_idCounter].shares = shares_;
         _depositList[_idCounter].rewardsPerShare = _updateRewardsPerShare(shares_, true, block.timestamp);
-        _depositList[_idCounter].nextId = _depositList[hint].nextId;
+        _depositList[_idCounter].nextId = _depositList[insertPosition_].nextId;
 
-        _depositList[hint].nextId = _idCounter;
+        _depositList[insertPosition_].nextId = _idCounter;
         _idCounter++;
 
         _broadcastDeposit(shares_, expireTime_);
@@ -154,24 +154,24 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         override
         returns (uint256 amount_)
     {
-        int256 amount;
+        int256 claimableRewards_;
         for (uint256 i = 0; i < depositIds_.length; i++) {
             uint256 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
             if (_depositList[id].expireTime >= block.timestamp) {
-                amount += int256(
+                claimableRewards_ += int256(
                     (_getRewardsPerShare(block.timestamp) - _depositList[id].rewardsPerShare) * _depositList[id].shares
                 );
             } else {
-                amount += int256(
+                claimableRewards_ += int256(
                     (_getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
                 );
             }
         }
-        amount += _pendingRewards[depositor_];
+        claimableRewards_ += _pendingRewards[depositor_];
 
-        amount_ = uint256(amount) / REWARD_PRECISION;
+        amount_ = uint256(claimableRewards_) / REWARD_PRECISION;
     }
 
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
