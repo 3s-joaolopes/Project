@@ -18,7 +18,8 @@ contract ProxyTest is Test, VaultFixture {
         super.setUp();
 
         Vault vaultImplementation = new Vault();
-        bytes memory initializeData = abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(0));
+        bytes memory initializeData =
+            abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(0));
         vm.startPrank(deployer);
         vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
         vm.stopPrank();
