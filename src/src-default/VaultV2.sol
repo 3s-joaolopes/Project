@@ -12,7 +12,6 @@ import { VaultV2Storage } from "./storage/VaultV2Storage.sol";
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
 contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
-
     uint128 constant REWARD_PRECISION = 1 ether;
     uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
     uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
@@ -113,7 +112,12 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         assembly {
             fromAddress_ := mload(add(srcAddress_, 20))
         }
-        (uint128 shares_, uint64 depositTime_, uint64 expireTime_) = abi.decode(payload_, (uint128, uint64, uint64));
+        //(uint128 shares_, uint64 depositTime_, uint64 expireTime_) = abi.decode(payload_, (uint128, uint64, uint64));
+        uint256 compacted_ = abi.decode(payload_, (uint256));
+        uint128 shares_ = uint128(compacted_ >> 128);
+        uint64 depositTime_ = uint64((compacted_ >> 64) & 0xffffffffffffffff);
+        uint64 expireTime_ = uint64(compacted_ & 0xffffffffffffffff);
+
         uint64 hint_ = getInsertPosition(expireTime_);
         _depositList[_idCounter].expireTime = expireTime_;
         _depositList[_idCounter].shares = shares_;
@@ -227,7 +231,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     }
 
     function _broadcastDeposit(uint128 shares, uint64 expireTime) internal {
-        bytes memory payload_ = abi.encodePacked(shares, block.timestamp, expireTime);
+        bytes memory payload_ = abi.encodePacked(shares, uint64(block.timestamp), expireTime);
 
         uint16 chainId_ = _chainIdList[CHAIN_LIST_SEPARATOR];
 
