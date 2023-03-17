@@ -56,16 +56,16 @@ contract Vault is IVault, UUPSUpgradeable {
         uint256 expireTime_ = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
         uint256 insertPosition_ = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
         uint256 shares_ = amount_ * (monthsLocked_ / 6);
-        asset.transferFrom(msg.sender, address(this), amount_);
+        if (asset.transferFrom(msg.sender, address(this), amount_) == false) revert AssetTransferError();
 
-        //this seems slow
-        //_depositList[_idCounter] = Deposit(...);
-        _depositList[_idCounter].expireTime = expireTime_;
-        _depositList[_idCounter].depositor = msg.sender;
-        _depositList[_idCounter].deposit = amount_;
-        _depositList[_idCounter].shares = shares_;
-        _depositList[_idCounter].rewardsPerShare = _updateRewardsPerShare(shares_, true, block.timestamp);
-        _depositList[_idCounter].nextId = _depositList[insertPosition_].nextId;
+        _depositList[_idCounter] = Deposit({
+            expireTime: expireTime_,
+            depositor: msg.sender,
+            deposit: amount_,
+            shares: shares_,
+            rewardsPerShare: _updateRewardsPerShare(shares_, true, block.timestamp),
+            nextId: _depositList[insertPosition_].nextId
+        });
 
         _depositList[insertPosition_].nextId = _idCounter;
         _idCounter++;

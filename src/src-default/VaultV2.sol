@@ -71,14 +71,16 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         uint256 expireTime_ = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
         uint256 insertPosition_ = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
         uint256 shares_ = amount_ * (monthsLocked_ / 6);
-        asset.transferFrom(msg.sender, address(this), amount_);
+        if (asset.transferFrom(msg.sender, address(this), amount_) == false) revert AssetTransferError();
 
-        _depositList[_idCounter].expireTime = expireTime_;
-        _depositList[_idCounter].depositor = msg.sender;
-        _depositList[_idCounter].deposit = amount_;
-        _depositList[_idCounter].shares = shares_;
-        _depositList[_idCounter].rewardsPerShare = _updateRewardsPerShare(shares_, true, block.timestamp);
-        _depositList[_idCounter].nextId = _depositList[insertPosition_].nextId;
+        _depositList[_idCounter] = Deposit({
+            expireTime: expireTime_,
+            depositor: msg.sender,
+            deposit: amount_,
+            shares: shares_,
+            rewardsPerShare: _updateRewardsPerShare(shares_, true, block.timestamp),
+            nextId: _depositList[insertPosition_].nextId
+        });
 
         _depositList[insertPosition_].nextId = _idCounter;
         _idCounter++;
@@ -142,7 +144,11 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     /// @inheritdoc IVaultV2
-    function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external override onlyOwner {
+    function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_)
+        external
+        override
+        onlyOwner
+    {
         if (remoteChainId_ == CHAIN_LIST_SEPARATOR) revert InvalidChainIdError();
         if (_chainIdList[remoteChainId_] != 0) revert DuplicatingChainIdError();
         _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_SEPARATOR];
@@ -241,12 +247,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
             bytes memory trustedRemote = _trustedRemoteLookup[chainId_];
 
             _lzEndpoint.send{ value: SEND_VALUE }(
-                chainId_, // destination LayerZero chainId
-                trustedRemote, // send to this address on the destination
-                payload_, // bytes payload
-                payable(msg.sender), // refund address
-                address(0x0), // future parameter
-                bytes("") // adapterParams (see "Advanced Features")
+                chainId_, trustedRemote, payload_, payable(msg.sender), address(0x0), bytes("")
             );
             chainId_ = _chainIdList[chainId_];
         }
