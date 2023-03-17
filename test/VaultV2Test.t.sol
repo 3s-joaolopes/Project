@@ -84,6 +84,29 @@ contract VaultV2Test is Test, VaultFixture {
         vm.stopPrank();
     }
 
+    function testVaultV2_UpgradeFromV1() external {
+        vm.warp(time);
+
+        // Alice deposits all her LPtokens for 6 months
+        vm.startPrank(alice);
+        uint64 monthsLocked = 6;
+        uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
+        vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
+        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+
+        // Fast-forward 12 months
+        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
+
+        // Alice withdraws her deposit and claims her rewards
+        vaultv2_chain1.withdraw();
+        uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
+        vaultv2_chain1.claimRewards(depositIds);
+        uint128 expectedValue = REWARDS_PER_MONTH * 6;
+        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        vm.stopPrank();
+    }
+
     function testVaultV2_MultiChainDeposit() external {
         vm.warp(time);
 
