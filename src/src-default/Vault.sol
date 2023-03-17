@@ -59,6 +59,7 @@ contract Vault is IVault, UUPSUpgradeable {
         asset.transferFrom(msg.sender, address(this), amount_);
 
         //this seems slow
+        //_depositList[_idCounter] = Deposit(...);
         _depositList[_idCounter].expireTime = expireTime_;
         _depositList[_idCounter].depositor = msg.sender;
         _depositList[_idCounter].deposit = amount_;
@@ -156,7 +157,8 @@ contract Vault is IVault, UUPSUpgradeable {
     function _maintainDepositList() internal {
         uint256 id_ = _depositList[LIST_START_ID].nextId;
         while (id_ != 0 && _depositList[id_].expireTime <= block.timestamp) {
-            uint256 rewardsPerShare_ = _updateRewardsPerShare(_depositList[id_].shares, false, _depositList[id_].expireTime);
+            uint256 rewardsPerShare_ =
+                _updateRewardsPerShare(_depositList[id_].shares, false, _depositList[id_].expireTime);
             uint256 rewards_ = (rewardsPerShare_ - _depositList[id_].rewardsPerShare) * _depositList[id_].shares;
             _pendingRewards[_depositList[id_].depositor] += int256(rewards_);
 

@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { OFToken } from "./OFToken.sol";
-import { IVaultV2 } from "./interfaces/IVaultV2.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
-
+import { IVault } from "./interfaces/IVault.sol";
+import { IVaultV2 } from "./interfaces/IVaultV2.sol";
+import { ILayerZeroReceiver } from "@layerZero/interfaces/ILayerZeroReceiver.sol";
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
 contract VaultV2 is IVaultV2, UUPSUpgradeable {
@@ -59,7 +60,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         _lastRewardUpdateTime = block.timestamp;
     }
 
-    // @inheritdoc IVaultV2
+    /// @inheritdoc IVault
     function deposit(uint256 amount_, uint256 monthsLocked_, uint256 hint_) external override {
         if (monthsLocked_ != 6 && monthsLocked_ != 12 && monthsLocked_ != 24 && monthsLocked_ != 48) {
             revert InvalidLockPeriodError();
@@ -87,6 +88,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         emit LogDeposit(msg.sender, amount_, monthsLocked_);
     }
 
+    /// @inheritdoc IVault
     function withdraw() external override {
         _maintainDepositList();
         uint256 amount_ = _withdrawableAssets[msg.sender];
@@ -97,7 +99,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         emit LogWithdraw(msg.sender, amount_);
     }
 
-    //would calling msg.sender only 1 improve performance ?
+    /// @inheritdoc IVault
     function claimRewards(uint256[] calldata depositIds_) external override {
         _maintainDepositList();
         uint256 amount_ = getclaimableRewards(msg.sender, depositIds_);
@@ -108,6 +110,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         emit LogClaimRewards(msg.sender, amount_);
     }
 
+    /// @inheritdoc ILayerZeroReceiver
     function lzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64, bytes calldata _payload)
         external
         override
@@ -138,7 +141,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         emit LogOmnichainDeposit(_srcChainId, fromAddress_, shares_, depositTime_, expireTime_);
     }
 
-    function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external onlyOwner {
+    /// @inheritdoc IVaultV2
+    function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external override onlyOwner {
         if (remoteChainId_ == CHAIN_LIST_SEPARATOR) revert InvalidChainIdError();
         if (_chainIdList[remoteChainId_] != 0) revert DuplicatingChainIdError();
         _chainIdList[remoteChainId_] = _chainIdList[CHAIN_LIST_SEPARATOR];
@@ -148,6 +152,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
     }
 
+    /// @inheritdoc IVault
     function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
         public
         view
@@ -174,6 +179,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         amount_ = uint256(claimableRewards_) / REWARD_PRECISION;
     }
 
+    /// @inheritdoc IVault
     function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
         hint_ = DEPOSIT_LIST_START_ID;
         uint256 nextId_ = _depositList[hint_].nextId;
@@ -184,6 +190,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         }
     }
 
+    /// @inheritdoc IVault
     function getDepositIds(address depositor_) external view override returns (uint256[] memory depositIds_) {
         uint256 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint256 arraysize_;
@@ -207,7 +214,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     function _maintainDepositList() internal {
         uint256 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         while (id_ != 0 && _depositList[id_].expireTime <= block.timestamp) {
-            uint256 rewardsPerShare = _updateRewardsPerShare(_depositList[id_].shares, false, _depositList[id_].expireTime);
+            uint256 rewardsPerShare =
+                _updateRewardsPerShare(_depositList[id_].shares, false, _depositList[id_].expireTime);
 
             //deposit made on this chain
             if (_depositList[id_].deposit != 0) {
