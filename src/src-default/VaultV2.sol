@@ -144,6 +144,11 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         emit LogTrustedRemoteAddress(remoteChainId_, remoteAddress_);
     }
 
+    /// @inheritdoc IVaultV2
+    function setLzEndpoint(address lzEndpoint_) external override onlyOwner {
+        _lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
+    }
+
     /// @inheritdoc IVault
     function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_) {
         amount_ = _withdrawableAssets[depositor_];

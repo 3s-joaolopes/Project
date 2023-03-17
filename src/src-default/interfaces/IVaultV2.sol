@@ -19,4 +19,8 @@ interface IVaultV2 is IVault, ILayerZeroReceiver {
     /// @param remoteChainId_   identifier of the remote chain
     /// @param remoteAddress_   address of the vault on the remote chain
     function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external;
+
+    /// @notice Set the LayerZero endpoint for inter-chain communication
+    /// @param lzEndpoint_   address of thw new endpoint
+    function setLzEndpoint(address lzEndpoint_) external;
 }
