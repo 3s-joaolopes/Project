@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import { IVault } from "./IVault.sol";
-import { ILayerZeroReceiver } from "@layerZero/interfaces/ILayerZeroReceiver.sol";
+import { ILayerZeroReceiver } from "./dependencies/ILayerZeroReceiver.sol";
 
 interface IVaultV2 is IVault, ILayerZeroReceiver {
     event LogOmnichainDeposit(
