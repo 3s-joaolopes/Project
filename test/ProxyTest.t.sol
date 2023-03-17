@@ -8,7 +8,6 @@ import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
-//import { Token } from "src/src-default/Token.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 
 contract ProxyTest is Test, VaultFixture {
@@ -19,7 +18,7 @@ contract ProxyTest is Test, VaultFixture {
         super.setUp();
 
         Vault vaultImplementation = new Vault();
-        bytes memory initializeData = abi.encodeWithSignature("initialize(address)", address(LPtoken));
+        bytes memory initializeData = abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(0));
         vm.startPrank(deployer);
         vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
         vm.stopPrank();
@@ -36,7 +35,7 @@ contract ProxyTest is Test, VaultFixture {
     function testVault_AlreadyInitialized() external {
         vm.startPrank(alice);
         vm.expectRevert(IVault.AlreadyInitializedError.selector);
-        vault.initialize(address(0));
+        vault.initialize(address(0), address(0));
         vm.stopPrank();
     }
 
@@ -45,7 +44,7 @@ contract ProxyTest is Test, VaultFixture {
         vm.startPrank(deployer);
         vault.upgradeTo(address(vaultImplementationUpgrade));
         vm.expectRevert(IVault.AlreadyInitializedError.selector);
-        vault.initialize(address(LPtoken));
+        vault.initialize(address(LPtoken), address(0));
         vm.stopPrank();
     }
 

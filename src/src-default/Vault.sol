@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import { Token } from "./Token.sol";
 import { OFToken } from "./OFToken.sol";
 import { IVault } from "./interfaces/IVault.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -22,11 +21,11 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
     }
 
     /// @dev Acts as the constructor
-    function initialize(address asset_) external {
+    function initialize(address asset_, address tokenLzEndpoint_) external {
         if (_initialized) revert AlreadyInitializedError();
         _initialized = true;
 
-        rewardToken = new OFToken(address(this), "Token", "TKN", address(0));
+        rewardToken = new OFToken(address(this), "Token", "TKN", tokenLzEndpoint_);
         asset = IERC20(asset_);
         _owner = msg.sender;
 

@@ -8,10 +8,10 @@ import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol
 import { IVault } from "./interfaces/IVault.sol";
 import { IVaultV2 } from "./interfaces/IVaultV2.sol";
 import { ILayerZeroReceiver } from "./interfaces/dependencies/ILayerZeroReceiver.sol";
-import { VaultV2StorageLayout } from "./storage/VaultV2StorageLayout.sol";
+import { VaultV2Storage } from "./storage/VaultV2Storage.sol";
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
-contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2StorageLayout {
+contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
 
     uint128 constant REWARD_PRECISION = 1 ether;
     uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)

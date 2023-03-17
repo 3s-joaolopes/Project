@@ -6,7 +6,6 @@ import "@forge-std/Test.sol"; // to get console.log
 import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
-//import { Token } from "src/src-default/Token.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 
 contract VaultTest is Test, VaultFixture {
@@ -17,14 +16,14 @@ contract VaultTest is Test, VaultFixture {
         super.setUp();
 
         vault = new Vault();
-        vault.initialize(address(LPtoken));
+        vault.initialize(address(LPtoken), address(0));
         rewardToken = vault.rewardToken();
     }
 
     function testVault_AlreadyInitialized() external {
         vm.startPrank(alice);
         vm.expectRevert(IVault.AlreadyInitializedError.selector);
-        vault.initialize(address(0));
+        vault.initialize(address(0), address(0));
         vm.stopPrank();
     }
 
