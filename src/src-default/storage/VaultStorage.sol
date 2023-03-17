@@ -6,7 +6,6 @@ import { OFToken } from "../OFToken.sol";
 import { IVault } from "../interfaces/IVault.sol";
 
 contract VaultStorage {
-
     uint128 internal _totalShares;
     uint128 internal _lastRewardsPerShare;
     uint64 internal _lastRewardUpdateTime;

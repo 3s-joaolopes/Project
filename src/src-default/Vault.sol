@@ -8,7 +8,6 @@ import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgra
 import { VaultStorage } from "./storage/VaultStorage.sol";
 
 contract Vault is IVault, UUPSUpgradeable, VaultStorage {
-
     uint128 constant REWARD_PRECISION = 1 ether;
     uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
     uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;

@@ -5,7 +5,6 @@ import { VaultStorage } from "./VaultStorage.sol";
 import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
 
 contract VaultV2Storage is VaultStorage {
-
     mapping(uint16 => bytes) internal _trustedRemoteLookup;
     mapping(uint16 => uint16) internal _chainIdList;
 
