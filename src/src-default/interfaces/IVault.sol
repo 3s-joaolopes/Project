@@ -23,6 +23,7 @@ interface IVault {
     error InvalidHintError();
     error InvalidLockPeriodError();
     error InsuficientDepositAmountError();
+    error AssetTransferError();
 
     /// @notice Deposit Uniswap LP tokens and lock them to earn rewards
     /// @param amount_        Amount of Uniswap LP tokens to deposit

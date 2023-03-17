@@ -15,7 +15,7 @@ interface IVaultV2 is IVault, ILayerZeroReceiver {
     error InvalidChainIdError();
     error DuplicatingChainIdError();
 
-    /// @notice Add a vault on a remote chain as a trusted source of information 
+    /// @notice Add a vault on a remote chain as a trusted source of information
     /// @param remoteChainId_   identifier of the remote chain
     /// @param remoteAddress_   address of the vault on the remote chain
     function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external;
