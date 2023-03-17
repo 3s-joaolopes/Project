@@ -10,9 +10,9 @@ import { Token } from "src/src-default/Token.sol";
 import { WETH9 } from "./WETH9.sol";
 
 contract VaultFixture is Test {
-    uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
-    uint256 constant REWARDS_PER_SECOND = 317;
-    uint256 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
 
     uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100 ether;
     uint256 public constant UNISWAP_INITIAL_WETH_RESERVE = 100 ether;

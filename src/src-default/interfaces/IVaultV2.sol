@@ -6,7 +6,7 @@ import { ILayerZeroReceiver } from "./dependencies/ILayerZeroReceiver.sol";
 
 interface IVaultV2 is IVault, ILayerZeroReceiver {
     event LogOmnichainDeposit(
-        uint256 srcChainId_, address fromAddress_, uint256 shares_, uint256 depositTime_, uint256 expiretime_
+        uint16 srcChainId_, address fromAddress_, uint128 shares_, uint64 depositTime_, uint64 expiretime_
     );
     event LogTrustedRemoteAddress(uint16 _remoteChainId, bytes _remoteAddress);
 

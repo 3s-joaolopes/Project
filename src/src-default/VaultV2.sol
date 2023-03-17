@@ -8,36 +8,18 @@ import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol
 import { IVault } from "./interfaces/IVault.sol";
 import { IVaultV2 } from "./interfaces/IVaultV2.sol";
 import { ILayerZeroReceiver } from "./interfaces/dependencies/ILayerZeroReceiver.sol";
+import { VaultV2StorageLayout } from "./storage/VaultV2StorageLayout.sol";
 //import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
-contract VaultV2 is IVaultV2, UUPSUpgradeable {
-    uint256 constant REWARD_PRECISION = 1 ether;
-    uint256 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
-    uint256 constant SECONDS_IN_30_DAYS = 2_592_000;
-    uint256 constant DEPOSIT_LIST_START_ID = 1;
-    uint256 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
-    uint256 constant SEND_VALUE = 1 ether;
+contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2StorageLayout {
+
+    uint128 constant REWARD_PRECISION = 1 ether;
+    uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
+    uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint64 constant DEPOSIT_LIST_START_ID = 1;
+    uint64 constant SEND_VALUE = 1 ether;
     uint16 constant CHAIN_LIST_SEPARATOR = 998;
-
-    address private _owner;
-    uint256 private _totalShares;
-    uint256 private _lastRewardUpdateTime;
-    uint256 private _lastRewardsPerShare;
-    uint256 private _idCounter;
-    bool private _initialized;
-
-    mapping(address => uint256) private _withdrawableAssets;
-    mapping(address => int256) private _pendingRewards; // can be negative
-    mapping(uint256 => Deposit) private _depositList;
-
-    IERC20 public asset;
-    OFToken public rewardToken;
-
-    // New storage variables
-    mapping(uint16 => bytes) private _trustedRemoteLookup;
-    mapping(uint16 => uint16) private _chainIdList;
-
-    ILayerZeroEndpoint private _lzEndpoint;
 
     modifier onlyOwner() {
         if (msg.sender != _owner) revert UnauthorizedError();
@@ -57,28 +39,28 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         _chainIdList[CHAIN_LIST_SEPARATOR] = CHAIN_LIST_SEPARATOR;
 
         _idCounter = 2;
-        _lastRewardUpdateTime = block.timestamp;
+        _lastRewardUpdateTime = uint64(block.timestamp);
     }
 
     /// @inheritdoc IVault
-    function deposit(uint256 amount_, uint256 monthsLocked_, uint256 hint_) external override {
+    function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external override {
         if (monthsLocked_ != 6 && monthsLocked_ != 12 && monthsLocked_ != 24 && monthsLocked_ != 48) {
             revert InvalidLockPeriodError();
         }
         if (amount_ < MINIMUM_DEPOSIT_AMOUNT) revert InsuficientDepositAmountError();
 
         _maintainDepositList();
-        uint256 expireTime_ = block.timestamp + monthsLocked_ * SECONDS_IN_30_DAYS;
-        uint256 insertPosition_ = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
-        uint256 shares_ = amount_ * (monthsLocked_ / 6);
+        uint64 expireTime_ = uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS;
+        uint64 insertPosition_ = _isValid(expireTime_, hint_) ? hint_ : getInsertPosition(expireTime_);
+        uint128 shares_ = amount_ * (monthsLocked_ / 6);
         if (asset.transferFrom(msg.sender, address(this), amount_) == false) revert AssetTransferError();
 
         _depositList[_idCounter] = Deposit({
-            expireTime: expireTime_,
             depositor: msg.sender,
             deposit: amount_,
             shares: shares_,
-            rewardsPerShare: _updateRewardsPerShare(shares_, true, block.timestamp),
+            rewardsPerShare: _updateRewardsPerShare(shares_, true, uint64(block.timestamp)),
+            expireTime: expireTime_,
             nextId: _depositList[insertPosition_].nextId
         });
 
@@ -93,7 +75,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     /// @inheritdoc IVault
     function withdraw() external override {
         _maintainDepositList();
-        uint256 amount_ = _withdrawableAssets[msg.sender];
+        uint128 amount_ = _withdrawableAssets[msg.sender];
         _withdrawableAssets[msg.sender] = 0;
         if (amount_ != 0) asset.transfer(msg.sender, amount_);
         else revert NoAssetToWithdrawError();
@@ -102,11 +84,11 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     /// @inheritdoc IVault
-    function claimRewards(uint256[] calldata depositIds_) external override {
+    function claimRewards(uint64[] calldata depositIds_) external override {
         _maintainDepositList();
-        uint256 amount_ = getclaimableRewards(msg.sender, depositIds_);
+        uint128 amount_ = getclaimableRewards(msg.sender, depositIds_);
         if (amount_ == 0) revert NoRewardsToClaimError();
-        _pendingRewards[msg.sender] -= int256(amount_ * REWARD_PRECISION);
+        _pendingRewards[msg.sender] -= int128(amount_ * REWARD_PRECISION);
         rewardToken.mintRewards(msg.sender, amount_);
 
         emit LogClaimRewards(msg.sender, amount_);
@@ -131,8 +113,8 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         assembly {
             fromAddress_ := mload(add(srcAddress_, 20))
         }
-        (uint256 shares_, uint256 depositTime_, uint256 expireTime_) = abi.decode(payload_, (uint256, uint256, uint256));
-        uint256 hint_ = getInsertPosition(expireTime_);
+        (uint128 shares_, uint64 depositTime_, uint64 expireTime_) = abi.decode(payload_, (uint128, uint64, uint64));
+        uint64 hint_ = getInsertPosition(expireTime_);
         _depositList[_idCounter].expireTime = expireTime_;
         _depositList[_idCounter].shares = shares_;
         _updateRewardsPerShare(shares_, true, depositTime_);
@@ -159,27 +141,28 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     /// @inheritdoc IVault
-    function getWithdrawableAmount(address depositor_) external view override returns (uint256 amount_) {
+    function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_) {
         amount_ = _withdrawableAssets[depositor_];
     }
 
     /// @inheritdoc IVault
-    function getclaimableRewards(address depositor_, uint256[] calldata depositIds_)
+    function getclaimableRewards(address depositor_, uint64[] calldata depositIds_)
         public
         view
         override
-        returns (uint256 amount_)
+        returns (uint128 amount_)
     {
-        int256 claimableRewards_;
-        for (uint256 i = 0; i < depositIds_.length; i++) {
-            uint256 id = depositIds_[i];
+        int128 claimableRewards_;
+        for (uint64 i = 0; i < depositIds_.length; i++) {
+            uint64 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
-            if (_depositList[id].expireTime >= block.timestamp) {
-                claimableRewards_ += int256(
-                    (_getRewardsPerShare(block.timestamp) - _depositList[id].rewardsPerShare) * _depositList[id].shares
+            if (_depositList[id].expireTime >= uint64(block.timestamp)) {
+                claimableRewards_ += int128(
+                    (_getRewardsPerShare(uint64(block.timestamp)) - _depositList[id].rewardsPerShare)
+                        * _depositList[id].shares
                 );
             } else {
-                claimableRewards_ += int256(
+                claimableRewards_ += int128(
                     (_getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
                 );
@@ -187,13 +170,13 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         }
         claimableRewards_ += _pendingRewards[depositor_];
 
-        amount_ = uint256(claimableRewards_) / REWARD_PRECISION;
+        amount_ = uint128(claimableRewards_) / REWARD_PRECISION;
     }
 
     /// @inheritdoc IVault
-    function getInsertPosition(uint256 expireTime_) public view override returns (uint256 hint_) {
+    function getInsertPosition(uint64 expireTime_) public view override returns (uint64 hint_) {
         hint_ = DEPOSIT_LIST_START_ID;
-        uint256 nextId_ = _depositList[hint_].nextId;
+        uint64 nextId_ = _depositList[hint_].nextId;
         while (nextId_ != 0) {
             if (_depositList[nextId_].expireTime >= expireTime_) break;
             hint_ = nextId_;
@@ -202,17 +185,17 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     /// @inheritdoc IVault
-    function getDepositIds(address depositor_) external view override returns (uint256[] memory depositIds_) {
-        uint256 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
-        uint256 arraysize_;
+    function getDepositIds(address depositor_) external view override returns (uint64[] memory depositIds_) {
+        uint64 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
+        uint64 arraysize_;
         while (id_ != 0) {
             if (_depositList[id_].depositor == depositor_) arraysize_++;
             id_ = _depositList[id_].nextId;
         }
-        depositIds_ = new uint256[](arraysize_);
+        depositIds_ = new uint64[](arraysize_);
 
         id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
-        uint256 i_;
+        uint64 i_;
         while (id_ != 0) {
             if (_depositList[id_].depositor == depositor_) {
                 depositIds_[i_] = id_;
@@ -223,19 +206,19 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
     }
 
     function _maintainDepositList() internal {
-        uint256 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
+        uint64 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         while (id_ != 0 && _depositList[id_].expireTime <= block.timestamp) {
-            uint256 rewardsPerShare =
+            uint128 rewardsPerShare =
                 _updateRewardsPerShare(_depositList[id_].shares, false, _depositList[id_].expireTime);
 
             //deposit made on this chain
             if (_depositList[id_].deposit != 0) {
-                uint256 rewards = (rewardsPerShare - _depositList[id_].rewardsPerShare) * _depositList[id_].shares;
-                _pendingRewards[_depositList[id_].depositor] += int256(rewards);
+                uint128 rewards = (rewardsPerShare - _depositList[id_].rewardsPerShare) * _depositList[id_].shares;
+                _pendingRewards[_depositList[id_].depositor] += int128(rewards);
                 _withdrawableAssets[_depositList[id_].depositor] += _depositList[id_].deposit;
                 emit LogExpiredDeposit(_depositList[id_].depositor, _depositList[id_].deposit, rewards);
             }
-            uint256 nextId = _depositList[id_].nextId;
+            uint64 nextId = _depositList[id_].nextId;
             delete _depositList[id_];
 
             id_ = nextId;
@@ -243,7 +226,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         }
     }
 
-    function _broadcastDeposit(uint256 shares, uint256 expireTime) internal {
+    function _broadcastDeposit(uint128 shares, uint64 expireTime) internal {
         bytes memory payload_ = abi.encodePacked(shares, block.timestamp, expireTime);
 
         uint16 chainId_ = _chainIdList[CHAIN_LIST_SEPARATOR];
@@ -258,12 +241,12 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         }
     }
 
-    function _getRewardsPerShare(uint256 timestamp_) internal view returns (uint256 rewardsPerShare_) {
+    function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_) {
         rewardsPerShare_ =
             _lastRewardsPerShare + (timestamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
     }
 
-    function _isValid(uint256 expireTime_, uint256 hint_) internal view returns (bool valid_) {
+    function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_) {
         if (
             _depositList[hint_].expireTime <= expireTime_
                 && _depositList[_depositList[hint_].nextId].expireTime >= expireTime_
@@ -272,9 +255,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable {
         }
     }
 
-    function _updateRewardsPerShare(uint256 shareVariation_, bool positiveVariation_, uint256 timeStamp_)
+    function _updateRewardsPerShare(uint128 shareVariation_, bool positiveVariation_, uint64 timeStamp_)
         internal
-        returns (uint256 rewardsPerShare_)
+        returns (uint128 rewardsPerShare_)
     {
         if (_totalShares != 0) {
             _lastRewardsPerShare += (timeStamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;

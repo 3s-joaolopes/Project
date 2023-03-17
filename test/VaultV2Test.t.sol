@@ -93,10 +93,10 @@ contract VaultV2Test is Test, VaultFixture {
 
         // Alice deposits all her LPtokens for 6 months
         vm.startPrank(alice);
-        uint256 monthsLocked = 6;
-        uint256 hint = vaultv2_chain1.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        uint64 monthsLocked = 6;
+        uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
-        vaultv2_chain1.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
 
         // Fast-forward 12 months
@@ -104,10 +104,10 @@ contract VaultV2Test is Test, VaultFixture {
 
         // Alice withdraws her deposit and claims her rewards
         vaultv2_chain1.withdraw();
-        uint256[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
+        uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
-        uint256 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken_chain1.balanceOf(alice), expectedValue), "Incorrect rewards");
+        uint128 expectedValue = REWARDS_PER_MONTH * 6;
+        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
         vm.stopPrank();
     }
 
@@ -116,10 +116,10 @@ contract VaultV2Test is Test, VaultFixture {
 
         // Alice deposits all her LPtokens on chain1 for 6 months
         vm.startPrank(alice);
-        uint256 monthsLocked = 6;
-        uint256 hint = vaultv2_chain1.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        uint64 monthsLocked = 6;
+        uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
-        vaultv2_chain1.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
         vm.stopPrank();
 
@@ -129,9 +129,9 @@ contract VaultV2Test is Test, VaultFixture {
         // Bob deposits all his LPtokens on chain2 for 12 months
         vm.startPrank(bob);
         monthsLocked = 12;
-        hint = vaultv2_chain2.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        hint = vaultv2_chain2.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain2), BOB_INITIAL_LP_BALANCE);
-        vaultv2_chain2.deposit(BOB_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vaultv2_chain2.deposit(uint128(BOB_INITIAL_LP_BALANCE), monthsLocked, hint);
         require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
         vm.stopPrank();
 
@@ -147,10 +147,10 @@ contract VaultV2Test is Test, VaultFixture {
         // Alice withdraws her deposit and claims her rewards
         vm.startPrank(alice);
         vaultv2_chain1.withdraw();
-        uint256[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
+        uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
-        uint256 expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        require(similar(rewardToken_chain1.balanceOf(alice), expectedValue), "Incorrect rewards 2");
+        uint128 expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
+        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards 2");
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
@@ -158,7 +158,7 @@ contract VaultV2Test is Test, VaultFixture {
         depositIds = vaultv2_chain2.getDepositIds(bob);
         vaultv2_chain2.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
-        require(similar(rewardToken_chain2.balanceOf(bob), expectedValue), "Incorrect rewards 2");
+        require(similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards 2");
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vaultv2_chain2.withdraw();
         vm.stopPrank();

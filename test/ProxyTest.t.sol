@@ -8,10 +8,11 @@ import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { VaultFixture } from "./utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
-import { Token } from "src/src-default/Token.sol";
+//import { Token } from "src/src-default/Token.sol";
+import { OFToken } from "src/src-default/OFToken.sol";
 
 contract ProxyTest is Test, VaultFixture {
-    Token public rewardToken;
+    OFToken public rewardToken;
     Vault public vault;
 
     function setUp() public override {
@@ -53,10 +54,10 @@ contract ProxyTest is Test, VaultFixture {
 
         // Alice deposits all her LPtokens for 6 months
         vm.startPrank(alice);
-        uint256 monthsLocked = 6;
-        uint256 hint = vault.getInsertPosition(block.timestamp + monthsLocked * SECONDS_IN_30_DAYS);
+        uint64 monthsLocked = 6;
+        uint64 hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
-        vault.deposit(ALICE_INITIAL_LP_BALANCE, monthsLocked, hint);
+        vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), uint64(monthsLocked), uint64(hint));
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
 
         // Fast-forward 12 months
@@ -64,10 +65,10 @@ contract ProxyTest is Test, VaultFixture {
 
         // Alice withdraws her deposit and claims her rewards
         vault.withdraw();
-        uint256[] memory depositIds = vault.getDepositIds(alice);
+        uint64[] memory depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        uint256 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken.balanceOf(alice), expectedValue), "Incorrect rewards");
+        uint128 expectedValue = REWARDS_PER_MONTH * 6;
+        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
         vm.stopPrank();
     }
 }
