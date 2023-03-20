@@ -61,30 +61,52 @@ contract VaultV2Test is Test, VaultFixture {
         vm.deal(address(vaultv2_chain2), 100 ether);
     }
 
-    function testVaultV2_Deposit() external {
+    function testVaultV2_UpgradeFromV1() external {
         vm.warp(time);
+
+        // Initialize vaultv1
+        vm.startPrank(deployer);
+        Vault vaultImplementation = new Vault();
+        bytes memory initializeData =
+            abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint1));
+        Vault vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
+        OFToken rewardToken = vault.rewardToken();
+
+        vm.stopPrank();
 
         // Alice deposits all her LPtokens for 6 months
         vm.startPrank(alice);
         uint64 monthsLocked = 6;
-        uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
-        LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
-        vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
+        uint64 hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
+        LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
+        vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
         require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        vm.stopPrank();
 
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
+        // Upgrade to vault v2
+        vm.startPrank(deployer);
+        VaultV2 vaultV2Implementation = new VaultV2();
+        vault.upgradeTo(address(vaultV2Implementation));
+        VaultV2 vaultv2 = VaultV2(address(vault));
+        vaultv2.resetTrustedRemoteAddresses();
+        bytes memory trustedRemoteAddress = abi.encodePacked(address(vaultv2_chain2), address(vaultv2));
+        vaultv2.addTrustedRemoteAddress(CHAIN_ID_2, trustedRemoteAddress);
+        vm.stopPrank();
+
         // Alice withdraws her deposit and claims her rewards
-        vaultv2_chain1.withdraw();
-        uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
-        vaultv2_chain1.claimRewards(depositIds);
+        vm.startPrank(alice);
+        vaultv2.withdraw();
+        uint64[] memory depositIds = vaultv2.getDepositIds(alice);
+        vaultv2.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
         vm.stopPrank();
     }
 
-    function testVaultV2_UpgradeFromV1() external {
+    function testVaultV2_Deposit() external {
         vm.warp(time);
 
         // Alice deposits all her LPtokens for 6 months
