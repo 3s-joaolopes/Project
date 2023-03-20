@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract Token is ERC20 {
     address private _owner;
 
-    error Unauthorized();
+    error UnauthorizedError();
 
     modifier onlyOwner() {
-        if (msg.sender != _owner) revert Unauthorized();
+        if (msg.sender != _owner) revert UnauthorizedError();
         _;
     }
 
