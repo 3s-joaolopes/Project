@@ -145,8 +145,21 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     }
 
     /// @inheritdoc IVaultV2
+    function resetTrustedRemoteAddresses() external override onlyOwner {
+        if (_chainIdList[CHAIN_LIST_SEPARATOR] != 0) {
+            uint16 chainId_ = _chainIdList[CHAIN_LIST_SEPARATOR];
+            while (chainId_ != CHAIN_LIST_SEPARATOR) {
+                chainId_ = _chainIdList[chainId_];
+                _chainIdList[chainId_] = 0;
+            }
+        }
+        _chainIdList[CHAIN_LIST_SEPARATOR] = CHAIN_LIST_SEPARATOR;
+    }
+
+    /// @inheritdoc IVaultV2
     function setLzEndpoint(address lzEndpoint_) external override onlyOwner {
         _lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
+        emit LogNewLzEndpoint(lzEndpoint_);
     }
 
     /// @inheritdoc IVault

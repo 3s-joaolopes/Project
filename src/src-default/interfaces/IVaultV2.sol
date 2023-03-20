@@ -8,7 +8,8 @@ interface IVaultV2 is IVault, ILayerZeroReceiver {
     event LogOmnichainDeposit(
         uint16 srcChainId_, address fromAddress_, uint128 shares_, uint64 depositTime_, uint64 expiretime_
     );
-    event LogTrustedRemoteAddress(uint16 _remoteChainId, bytes _remoteAddress);
+    event LogTrustedRemoteAddress(uint16 remoteChainId_, bytes remoteAddress_);
+    event LogNewLzEndpoint(address lzEndpoint_);
 
     error NotEndpointError();
     error NotTrustedSourceError();
@@ -19,6 +20,9 @@ interface IVaultV2 is IVault, ILayerZeroReceiver {
     /// @param remoteChainId_   identifier of the remote chain
     /// @param remoteAddress_   address of the vault on the remote chain
     function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external;
+
+    /// @notice Reset the white-listed "trusted source of information" vault addresses
+    function resetTrustedRemoteAddresses() external;
 
     /// @notice Set the LayerZero endpoint for inter-chain communication
     /// @param lzEndpoint_   address of thw new endpoint
