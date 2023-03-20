@@ -6,6 +6,7 @@ import { OFToken } from "./OFToken.sol";
 import { IVault } from "./interfaces/IVault.sol";
 import { UUPSUpgradeable } from "@openzeppelin-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { VaultStorage } from "./storage/VaultStorage.sol";
+import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
 
 contract Vault is IVault, UUPSUpgradeable, VaultStorage {
     uint128 constant REWARD_PRECISION = 1 ether;
@@ -26,6 +27,7 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
 
         rewardToken = new OFToken(address(this), "Token", "TKN", tokenLzEndpoint_);
         asset = IERC20(asset_);
+        _lzEndpoint = ILayerZeroEndpoint(tokenLzEndpoint_);
         _owner = msg.sender;
 
         _idCounter = 2;

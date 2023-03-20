@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { OFToken } from "../OFToken.sol";
 import { IVault } from "../interfaces/IVault.sol";
+import { ILayerZeroEndpoint } from "@layerZero/interfaces/ILayerZeroEndpoint.sol";
 
 contract VaultStorage {
     uint128 internal _totalShares; // The total number of outstanding vault shares
@@ -19,4 +20,5 @@ contract VaultStorage {
 
     IERC20 public asset; // The ERC20 token to use as the asset for deposits
     OFToken public rewardToken; // The ERC20 token used to distribute rewards
+    ILayerZeroEndpoint public _lzEndpoint; // The LayerZero endpoint used by the token to communicate with other chains
 }
