@@ -20,7 +20,7 @@ contract VaultStorage {
 
     IERC20 public asset; // The ERC20 token to use as the asset for deposits
     OFToken public rewardToken; // The ERC20 token used to distribute rewards
-    ILayerZeroEndpoint public _lzEndpoint; // The LayerZero endpoint used by the token to communicate with other chains
+    ILayerZeroEndpoint public lzEndpoint; // The LayerZero endpoint used by the token to communicate with other chains
 
-    uint256[50] internal gap;
+    uint256[50] internal _gap;
 }

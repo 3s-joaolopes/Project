@@ -32,7 +32,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
 
         rewardToken = new OFToken(address(this), "Token", "TKN", lzEndpoint_);
         asset = IERC20(asset_);
-        _lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
+        lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
         _owner = msg.sender;
 
         _chainIdList[CHAIN_LIST_SEPARATOR] = CHAIN_LIST_SEPARATOR;
@@ -98,7 +98,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         external
         override
     {
-        if (msg.sender != address(_lzEndpoint)) revert NotEndpointError();
+        if (msg.sender != address(lzEndpoint)) revert NotEndpointError();
         bytes memory trustedRemote_ = _trustedRemoteLookup[srcChainId_];
         if (
             srcAddress_.length != trustedRemote_.length || trustedRemote_.length == 0
@@ -158,7 +158,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
 
     /// @inheritdoc IVaultV2
     function setLzEndpoint(address lzEndpoint_) external override onlyOwner {
-        _lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
+        lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
         emit LogNewLzEndpoint(lzEndpoint_);
     }
 
@@ -256,7 +256,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         while (chainId_ != CHAIN_LIST_SEPARATOR) {
             bytes memory trustedRemote = _trustedRemoteLookup[chainId_];
 
-            _lzEndpoint.send{ value: SEND_VALUE }(
+            lzEndpoint.send{ value: SEND_VALUE }(
                 chainId_, trustedRemote, payload_, payable(msg.sender), address(0x0), bytes("")
             );
             chainId_ = _chainIdList[chainId_];

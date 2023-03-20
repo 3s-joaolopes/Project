@@ -27,7 +27,7 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
 
         rewardToken = new OFToken(address(this), "Token", "TKN", tokenLzEndpoint_);
         asset = IERC20(asset_);
-        _lzEndpoint = ILayerZeroEndpoint(tokenLzEndpoint_);
+        lzEndpoint = ILayerZeroEndpoint(tokenLzEndpoint_);
         _owner = msg.sender;
 
         _idCounter = 2;
