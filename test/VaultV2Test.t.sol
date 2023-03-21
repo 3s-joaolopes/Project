@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
 import { VaultFixture } from "./utils/VaultFixture.sol";
+import { LayerZeroHelper } from "./utils/LayerZeroHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
 import { Vault } from "src/src-default/Vault.sol";
@@ -11,17 +12,17 @@ import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
-contract VaultV2Test is Test, VaultFixture {
+contract VaultV2Test is Test, LayerZeroHelper {
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
     uint256 public constant BOB_INITIAL_LP_BALANCE = 2 ether;
     uint16 constant CHAIN_ID_1 = 1;
     uint16 constant CHAIN_ID_2 = 2;
 
-    LZEndpointMock endpoint1;
-    LZEndpointMock endpoint2;
-
     VaultV2 public vaultv2_chain1;
     VaultV2 public vaultv2_chain2;
+
+    LZEndpointMock endpoint1;
+    LZEndpointMock endpoint2;
 
     OFToken public rewardToken_chain1;
     OFToken public rewardToken_chain2;
@@ -32,38 +33,20 @@ contract VaultV2Test is Test, VaultFixture {
         giveLPtokens(alice, ALICE_INITIAL_LP_BALANCE);
         giveLPtokens(bob, BOB_INITIAL_LP_BALANCE);
 
-        endpoint1 = new LZEndpointMock(CHAIN_ID_1);
-        endpoint2 = new LZEndpointMock(CHAIN_ID_2);
+        uint16[] memory chainIds_ = new uint16[](2);
+        chainIds_[0] = CHAIN_ID_1;
+        chainIds_[1] = CHAIN_ID_2;
+        (address[] memory vaultsv2_, address[] memory endpoints_, address[] memory rewardTokens_) =
+            deployBatchOnChain(chainIds_);
+        connectVaults(chainIds_, vaultsv2_, endpoints_);
 
-        VaultV2 vaultImplementation_chain1 = new VaultV2();
-        VaultV2 vaultImplementation_chain2 = new VaultV2();
+        vaultv2_chain1 = VaultV2(vaultsv2_[0]);
+        endpoint1 = LZEndpointMock(endpoints_[0]);
+        rewardToken_chain1 = OFToken(rewardTokens_[0]);
 
-        vm.startPrank(deployer);
-        // Deploy and initialize vaultv2 on chain 1
-        bytes memory initializeData =
-            abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint1));
-        vaultv2_chain1 = VaultV2(address(new UUPSProxy(address(vaultImplementation_chain1), initializeData)));
-        rewardToken_chain1 = vaultv2_chain1.rewardToken();
-
-        // Deploy and initialize vaultv2 on chain 2
-        initializeData = abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint2));
-        vaultv2_chain2 = VaultV2(address(new UUPSProxy(address(vaultImplementation_chain2), initializeData)));
-        rewardToken_chain2 = vaultv2_chain2.rewardToken();
-
-        bytes memory trustedRemoteAddress = abi.encodePacked(address(vaultv2_chain2), address(vaultv2_chain1));
-        vaultv2_chain1.addTrustedRemoteAddress(CHAIN_ID_2, trustedRemoteAddress);
-        trustedRemoteAddress = abi.encodePacked(address(vaultv2_chain1), address(vaultv2_chain2));
-        vaultv2_chain2.addTrustedRemoteAddress(CHAIN_ID_1, trustedRemoteAddress);
-
-        endpoint1.setDestLzEndpoint(address(vaultv2_chain2), address(endpoint2));
-        endpoint2.setDestLzEndpoint(address(vaultv2_chain1), address(endpoint1));
-
-        vm.stopPrank();
-
-        vm.deal(alice, 100 ether);
-        vm.deal(bob, 100 ether);
-        vm.deal(address(vaultv2_chain1), 100 ether);
-        vm.deal(address(vaultv2_chain2), 100 ether);
+        vaultv2_chain2 = VaultV2(vaultsv2_[1]);
+        endpoint2 = LZEndpointMock(endpoints_[1]);
+        rewardToken_chain2 = OFToken(rewardTokens_[1]);
     }
 
     function testVaultV2_UpgradeFromV1() external {
@@ -76,7 +59,6 @@ contract VaultV2Test is Test, VaultFixture {
             abi.encodeWithSignature("initialize(address,address)", address(LPtoken), address(endpoint1));
         Vault vault = Vault(address(new UUPSProxy(address(vaultImplementation), initializeData)));
         OFToken rewardToken = vault.rewardToken();
-
         vm.stopPrank();
 
         // Alice deposits all her LPtokens for 6 months
