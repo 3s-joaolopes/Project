@@ -76,7 +76,7 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
     /// @inheritdoc IVault
     function claimRewards(uint64[] calldata depositIds_) external override {
         _maintainDepositList();
-        uint128 amount_ = getclaimableRewards(msg.sender, depositIds_);
+        uint128 amount_ = getClaimableRewards(msg.sender, depositIds_);
         if (amount_ == 0) revert NoRewardsToClaimError();
         _pendingRewards[msg.sender] -= int128(amount_ * REWARD_PRECISION);
         rewardToken.mintRewards(msg.sender, amount_);
@@ -90,7 +90,7 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
     }
 
     /// @inheritdoc IVault
-    function getclaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
         public
         view
         override

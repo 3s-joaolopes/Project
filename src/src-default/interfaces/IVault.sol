@@ -47,7 +47,7 @@ interface IVault {
     /// @param  depositor_   address of the depositor
     /// @param  depositIds_  Ids of the deposits held by depositor_
     /// @return amount_      amount that can be claimed
-    function getclaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
         external
         view
         returns (uint128 amount_);

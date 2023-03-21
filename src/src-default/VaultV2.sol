@@ -85,7 +85,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     /// @inheritdoc IVault
     function claimRewards(uint64[] calldata depositIds_) external override {
         _maintainDepositList();
-        uint128 amount_ = getclaimableRewards(msg.sender, depositIds_);
+        uint128 amount_ = getClaimableRewards(msg.sender, depositIds_);
         if (amount_ == 0) revert NoRewardsToClaimError();
         _pendingRewards[msg.sender] -= int128(amount_ * REWARD_PRECISION);
         rewardToken.mintRewards(msg.sender, amount_);
@@ -168,7 +168,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     }
 
     /// @inheritdoc IVault
-    function getclaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
         public
         view
         override
@@ -178,12 +178,12 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         for (uint64 i = 0; i < depositIds_.length; i++) {
             uint64 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
-            if (_depositList[id].expireTime >= uint64(block.timestamp)) {
+            if (_depositList[id].expireTime >= uint64(block.timestamp)) { //deposit hasn't expired
                 claimableRewards_ += int128(
                     (_getRewardsPerShare(uint64(block.timestamp)) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
                 );
-            } else {
+            } else { //deposit has expired
                 claimableRewards_ += int128(
                     (_getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
