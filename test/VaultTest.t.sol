@@ -9,11 +9,17 @@ import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 
 contract VaultTest is Test, VaultFixture {
+    uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
+    uint256 public constant BOB_INITIAL_LP_BALANCE = 2 ether;
+
     OFToken public rewardToken;
     Vault public vault;
 
     function setUp() public override {
         super.setUp();
+
+        giveLPtokens(alice, ALICE_INITIAL_LP_BALANCE);
+        giveLPtokens(bob, BOB_INITIAL_LP_BALANCE);
 
         vault = new Vault();
         vault.initialize(address(LPtoken), address(0));
@@ -77,23 +83,22 @@ contract VaultTest is Test, VaultFixture {
         hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
         vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
 
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
-        // Alice checks claimable rewards
+        // Alice withdraws her deposit
+        vault.withdraw();
+        uint256 balance = LPtoken.balanceOf(alice);
+        assert(balance == ALICE_INITIAL_LP_BALANCE);
+
+        // Alice claims her rewards
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
         depositIds = vault.getDepositIds(alice);
-        require(
-            similar(vault.getclaimableRewards(alice, depositIds), uint256(expectedValue)), "Incorrect claimable rewards"
-        );
-
-        // Alice withdraws her deposit and claims her rewards
-        vault.withdraw();
-        depositIds = vault.getDepositIds(alice);
+        assert(similar(vault.getClaimableRewards(alice, depositIds), uint256(expectedValue)));
         vault.claimRewards(depositIds);
-        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -110,7 +115,7 @@ contract VaultTest is Test, VaultFixture {
         hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE / 2);
         vault.deposit(uint128(BOB_INITIAL_LP_BALANCE / 2), monthsLocked, hint);
-        require(LPtoken.balanceOf(bob) == BOB_INITIAL_LP_BALANCE / 2, "Failed to assert bob balance after deposit");
+        assert(LPtoken.balanceOf(bob) == BOB_INITIAL_LP_BALANCE / 2);
 
         // Fast-forward 3 months
         vm.warp(time += 3 * SECONDS_IN_30_DAYS);
@@ -120,13 +125,13 @@ contract VaultTest is Test, VaultFixture {
         hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE / 2);
         vault.deposit(uint128(BOB_INITIAL_LP_BALANCE / 2), monthsLocked, hint);
-        require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
+        assert(LPtoken.balanceOf(bob) == 0);
 
         // Bob claims rewards
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 3;
-        require(similar(rewardToken.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards (1)");
+        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Fast-forward 9 months
         vm.warp(time += 9 * SECONDS_IN_30_DAYS);
@@ -136,7 +141,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 12;
-        require(similar(rewardToken.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards (2)");
+        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Fast-forward 6 months
         vm.warp(time += 3 * SECONDS_IN_30_DAYS);
@@ -146,7 +151,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 15;
-        require(similar(rewardToken.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards (3)");
+        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         vm.stopPrank();
     }
@@ -165,7 +170,7 @@ contract VaultTest is Test, VaultFixture {
         hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
         vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
         vm.stopPrank();
 
         // Fast-forward 3 months
@@ -185,7 +190,7 @@ contract VaultTest is Test, VaultFixture {
         monthsLocked = 12;
         LPtoken.approve(address(vault), BOB_INITIAL_LP_BALANCE);
         vault.deposit(uint128(BOB_INITIAL_LP_BALANCE), monthsLocked, 100);
-        require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
+        assert(LPtoken.balanceOf(bob) == 0);
         vm.stopPrank();
 
         // Alice claims her rewards and tries to withdraw before lock period
@@ -193,7 +198,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", REWARDS_PER_MONTH * 3);
-        require(similar(rewardToken.balanceOf(alice), uint256(REWARDS_PER_MONTH * 3)), "Incorrect rewards 1");
+        assert(similar(rewardToken.balanceOf(alice), uint256(REWARDS_PER_MONTH * 3)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
@@ -208,7 +213,7 @@ contract VaultTest is Test, VaultFixture {
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
         console.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
-        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards 2");
+        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
@@ -217,13 +222,10 @@ contract VaultTest is Test, VaultFixture {
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
         console.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
-        require(similar(rewardToken.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards 2");
+        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
-
-        // Fast-forward 12 months
-        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
         // Alice tries to claim bob's rewards
         vm.startPrank(alice);
@@ -231,6 +233,9 @@ contract VaultTest is Test, VaultFixture {
         vm.expectRevert(IVault.InvalidHintError.selector);
         vault.claimRewards(depositIds);
         vm.stopPrank();
+
+        // Fast-forward 12 months
+        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
 
         // Bob withdraws deposit and claims rewards
         vm.startPrank(bob);
@@ -242,23 +247,20 @@ contract VaultTest is Test, VaultFixture {
         // Print reward token balances
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
         console.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
-        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards 3");
+        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 9;
         console.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
-        require(similar(rewardToken.balanceOf(bob), uint256(expectedValue)), "Incorrect rewards 4");
+        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 15;
         console.log(
             "Total rewards:", rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), "->", uint256(expectedValue)
         );
-        require(
-            similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), uint256(expectedValue)),
-            "Incorrect rewards 4"
-        );
+        assert(similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Check if withdrawls were successful
         uint256 balance = LPtoken.balanceOf(alice);
-        require(balance == ALICE_INITIAL_LP_BALANCE, "Failed to assert alice's balance");
+        assert(balance == ALICE_INITIAL_LP_BALANCE);
         balance = LPtoken.balanceOf(bob);
-        require(balance == BOB_INITIAL_LP_BALANCE, "Failed to assert bob's balance");
+        assert(balance == BOB_INITIAL_LP_BALANCE);
     }
 }

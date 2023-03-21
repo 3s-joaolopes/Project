@@ -11,11 +11,17 @@ import { VaultTest } from "./VaultTest.t.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 
 contract ProxyTest is Test, VaultFixture {
+    uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
+    uint256 public constant BOB_INITIAL_LP_BALANCE = 2 ether;
+
     OFToken public rewardToken;
     Vault public vault;
 
     function setUp() public override {
         super.setUp();
+
+        giveLPtokens(alice, ALICE_INITIAL_LP_BALANCE);
+        giveLPtokens(bob, BOB_INITIAL_LP_BALANCE);
 
         Vault vaultImplementation = new Vault();
         bytes memory initializeData =
