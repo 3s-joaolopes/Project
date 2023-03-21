@@ -178,12 +178,14 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         for (uint64 i = 0; i < depositIds_.length; i++) {
             uint64 id = depositIds_[i];
             if (_depositList[id].depositor != depositor_) revert InvalidHintError();
-            if (_depositList[id].expireTime >= uint64(block.timestamp)) { //deposit hasn't expired
+            if (_depositList[id].expireTime >= uint64(block.timestamp)) {
+                //deposit hasn't expired
                 claimableRewards_ += int128(
                     (_getRewardsPerShare(uint64(block.timestamp)) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
                 );
-            } else { //deposit has expired
+            } else {
+                //deposit has expired
                 claimableRewards_ += int128(
                     (_getRewardsPerShare(_depositList[id].expireTime) - _depositList[id].rewardsPerShare)
                         * _depositList[id].shares
@@ -211,7 +213,9 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         uint64 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint64 arraysize_;
         while (id_ != 0) {
-            if (_depositList[id_].depositor == depositor_) arraysize_++;
+            if (_depositList[id_].depositor == depositor_ && _depositList[id_].expireTime > block.timestamp) {
+                arraysize_++;
+            }
             id_ = _depositList[id_].nextId;
         }
         depositIds_ = new uint64[](arraysize_);
@@ -219,7 +223,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint64 i_;
         while (id_ != 0) {
-            if (_depositList[id_].depositor == depositor_) {
+            if (_depositList[id_].depositor == depositor_ && _depositList[id_].expireTime > block.timestamp) {
                 depositIds_[i_] = id_;
                 i_++;
             }

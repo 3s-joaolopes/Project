@@ -38,12 +38,14 @@ interface IVault {
     /// @param  depositIds_  Ids of the deposits held by msg.sender
     function claimRewards(uint64[] calldata depositIds_) external;
 
-    /// @notice Get the deposit ids of the deposits held by a depositor
+    /// @notice The amount of asset a depositor can withdraw
+    /// @dev    Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date
     /// @param  depositor_    address of the depositor
-    /// @return amount_   deposit ids
+    /// @return amount_       amount that can be withdrawn
     function getWithdrawableAmount(address depositor_) external view returns (uint128 amount_);
 
-    /// @notice Get amount of reward tokens that can be claimed by depositor_
+    /// @notice The amount of reward tokens that can be claimed by a depositor
+    /// @dev    Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date
     /// @param  depositor_   address of the depositor
     /// @param  depositIds_  Ids of the deposits held by depositor_
     /// @return amount_      amount that can be claimed
@@ -52,12 +54,12 @@ interface IVault {
         view
         returns (uint128 amount_);
 
-    /// @notice Get the insert position on the sorted list
+    /// @notice The insert position on the sorted list
     /// @param  expireTime_   the expire time of a deposit
     /// @return hint_       insert position on the sorted list
     function getInsertPosition(uint64 expireTime_) external view returns (uint64 hint_);
 
-    /// @notice Get the deposit ids of the deposits held by a depositor
+    /// @notice The deposit ids of all the active deposits held by a depositor
     /// @param  depositor_    address of the depositor
     /// @return depositIds_   deposit ids
     function getDepositIds(address depositor_) external view returns (uint64[] memory depositIds_);

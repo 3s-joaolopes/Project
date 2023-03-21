@@ -133,7 +133,9 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
         uint64 id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint64 arraysize_;
         while (id_ != 0) {
-            if (_depositList[id_].depositor == depositor_) arraysize_++;
+            if (_depositList[id_].depositor == depositor_ && _depositList[id_].expireTime > block.timestamp) {
+                arraysize_++;
+            }
             id_ = _depositList[id_].nextId;
         }
         depositIds_ = new uint64[](arraysize_);
@@ -141,7 +143,7 @@ contract Vault is IVault, UUPSUpgradeable, VaultStorage {
         id_ = _depositList[DEPOSIT_LIST_START_ID].nextId;
         uint64 i_;
         while (id_ != 0) {
-            if (_depositList[id_].depositor == depositor_) {
+            if (_depositList[id_].depositor == depositor_ && _depositList[id_].expireTime > block.timestamp) {
                 depositIds_[i_] = id_;
                 i_++;
             }
