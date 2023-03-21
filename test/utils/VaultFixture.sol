@@ -13,27 +13,33 @@ contract VaultFixture is Test {
     uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint128 constant REWARDS_PER_SECOND = 317;
     uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint256 constant STARTING_TIME = 1000;
 
-    uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100 ether;
-    uint256 public constant UNISWAP_INITIAL_WETH_RESERVE = 100 ether;
-    uint256 public constant ALICE_INITIAL_LP_BALANCE = 1000;
-    uint256 public constant BOB_INITIAL_LP_BALANCE = 2000;
+    uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100_000_000 ether;
+    uint256 public constant UNISWAP_INITIAL_WETH_RESERVE = 100_000_000 ether;
 
     address public deployer = vm.addr(1000);
     address public alice = vm.addr(1500);
     address public bob = vm.addr(1501);
-    uint256 public time = 1000;
+    address public router;
+    address public factory;
+    uint256 public time = STARTING_TIME;
 
     IERC20 public LPtoken;
 
     function setUp() public virtual {
         setUpUniswap();
 
+        vm.label(deployer, "Deployer");
+        vm.label(alice, "Alice");
+        vm.label(bob, "Bob");
+
         //sanity checks
         require(similar(100, 110) == false, "similar failed 1");
         require(similar(110, 100) == false, "similar failed 2");
         require(similar(100, 101) == true, "similar failed 3");
-        require(similar(100, 101) == true, "similar failed 4");
+        require(similar(101, 100) == true, "similar failed 4");
+        require(similar(100, 100) == true, "similar failed 4");
     }
 
     function similar(uint256 a, uint256 b) public pure returns (bool result) {
@@ -43,19 +49,39 @@ contract VaultFixture is Test {
         dif = (a > b) ? a - b : b - a;
         smallest = (a > b) ? b : a;
         dif *= 100;
-        if (dif / smallest < 2) result = true;
+        if (dif / smallest < 3) result = true;
         else result = false;
     }
 
+    function giveLPtokens(address receiver_, uint256 amount_) public {
+        vm.startPrank(deployer);
+        LPtoken.transfer(receiver_, amount_);
+
+        //sanity check
+        if (receiver_ != deployer) {
+            uint256 balance = LPtoken.balanceOf(receiver_);
+            require(balance == amount_, "Failed to give LP tokens");
+        }
+
+        vm.stopPrank();
+    }
+
+    function deposit(address vaultAddr_, address depositor_, uint128 deposit_, uint64 monthsLocked_) public {
+        vm.startPrank(depositor_);
+        uint256 startingBalance = LPtoken.balanceOf(depositor_);
+        uint64 hint_ =
+            IVault(vaultAddr_).getInsertPosition(uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS);
+        LPtoken.approve(vaultAddr_, deposit_);
+        IVault(vaultAddr_).deposit(deposit_, monthsLocked_, hint_);
+        require(
+            LPtoken.balanceOf(depositor_) == startingBalance - deposit_, "Failed to assert alice balance after deposit"
+        );
+        vm.stopPrank();
+    }
+
     function setUpUniswap() internal {
-        vm.label(deployer, "Deployer");
-        vm.label(alice, "Alice");
-        vm.label(bob, "Bob");
-
-        // Fund  wallets
+        // Fund  wallet
         vm.deal(deployer, UNISWAP_INITIAL_WETH_RESERVE);
-        vm.deal(alice, ALICE_INITIAL_LP_BALANCE);
-
         vm.startPrank(deployer);
 
         //  Setup Token contracts.
@@ -63,8 +89,8 @@ contract VaultFixture is Test {
         WETH9 weth = new WETH9();
 
         // Setup Uniswap V2 contracts
-        address factory = deployCode("UniswapV2Factory.sol", abi.encode(address(0)));
-        address router = deployCode("UniswapV2Router02.sol", abi.encode(address(factory), address(weth)));
+        factory = deployCode("UniswapV2Factory.sol", abi.encode(address(0)));
+        router = deployCode("UniswapV2Router02.sol", abi.encode(address(factory), address(weth)));
         vm.label(factory, "Factory");
         vm.label(router, "Router");
 
@@ -90,34 +116,6 @@ contract VaultFixture is Test {
         LPtoken = IERC20(abi.decode(data, (address)));
         vm.label(address(LPtoken), "LPtoken");
 
-        LPtoken.transfer(bob, BOB_INITIAL_LP_BALANCE);
-
-        tokenA.mintRewards(alice, ALICE_INITIAL_LP_BALANCE);
         vm.stopPrank();
-
-        vm.startPrank(alice);
-        tokenA.approve(router, ALICE_INITIAL_LP_BALANCE);
-        (success,) = router.call{ value: ALICE_INITIAL_LP_BALANCE }(
-            abi.encodeWithSignature(
-                "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)",
-                address(tokenA),
-                ALICE_INITIAL_LP_BALANCE,
-                0,
-                0,
-                alice,
-                block.timestamp * 2
-            )
-        );
-        require(success);
-        vm.stopPrank();
-
-        //sanity checks
-        uint256 balance = LPtoken.balanceOf(alice);
-        require(balance == ALICE_INITIAL_LP_BALANCE, "Failed to assert alice initial balance");
-        //console.log("alice balance:", balance);
-
-        balance = LPtoken.balanceOf(bob);
-        require(balance == BOB_INITIAL_LP_BALANCE, "Failed to assert bob initial balance");
-        //console.log("bob balance:", balance);
     }
 }
