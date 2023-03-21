@@ -12,8 +12,8 @@ import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
-contract DepositFuzzTests is Test, LayerZeroHelper {
-    uint16 constant CHAIN_ID_1 = 1;
+contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
+    uint16 constant CHAIN_ID = 1;
 
     VaultV2 public vaultv2;
     LZEndpointMock public endpoint;
@@ -22,14 +22,13 @@ contract DepositFuzzTests is Test, LayerZeroHelper {
     function setUp() public override {
         super.setUp();
 
-        uint16 chainId = 1;
-        (address vaultv2Addr, address endpointAddr, address rewardTokenAddr) = deployOnChain(chainId);
+        (address vaultv2Addr, address endpointAddr, address rewardTokenAddr) = deployOnChain(CHAIN_ID);
         vaultv2 = VaultV2(vaultv2Addr);
         endpoint = LZEndpointMock(endpointAddr);
         rewardToken = OFToken(rewardTokenAddr);
     }
 
-    function testFuzz_Deposit(address depositor_, uint128 deposit_, uint64 monthsLocked_) external {
+    function testFuzz_Deposit(address depositor_, uint128 deposit_, uint64 monthsLocked_, uint64 hint_) external {
         vm.assume(depositor_ != address(0));
         vm.assume(depositor_ != router);
         deposit_ = uint128(bound(deposit_, 0, 1_000_000 ether));
@@ -40,19 +39,18 @@ contract DepositFuzzTests is Test, LayerZeroHelper {
 
         // Deposit
         vm.startPrank(depositor_);
-        uint64 hint = vaultv2.getInsertPosition(uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2), deposit_);
         if (monthsLocked_ != 6 && monthsLocked_ != 12 && monthsLocked_ != 24 && monthsLocked_ != 48) {
             vm.expectRevert(IVault.InvalidLockPeriodError.selector);
-            vaultv2.deposit(uint128(deposit_), monthsLocked_, hint);
+            vaultv2.deposit(uint128(deposit_), monthsLocked_, hint_);
             return;
         }
         if (deposit_ < 1000) {
             vm.expectRevert(IVault.InsuficientDepositAmountError.selector);
-            vaultv2.deposit(uint128(deposit_), monthsLocked_, hint);
+            vaultv2.deposit(uint128(deposit_), monthsLocked_, hint_);
             return;
         }
-        vaultv2.deposit(uint128(deposit_), monthsLocked_, hint);
+        vaultv2.deposit(uint128(deposit_), monthsLocked_, hint_);
         assert(LPtoken.balanceOf(depositor_) == 0);
         vm.stopPrank();
     }
