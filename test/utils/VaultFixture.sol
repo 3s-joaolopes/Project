@@ -6,7 +6,7 @@ import "@forge-std/Test.sol"; // to get console.log
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
-import { Token } from "src/src-default/Token.sol";
+import { Token } from "./Token.sol";
 import { WETH9 } from "./WETH9.sol";
 
 contract VaultFixture is Test {
