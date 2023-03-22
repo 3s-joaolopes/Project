@@ -37,7 +37,7 @@ contract LayerZeroHelper is Test, VaultFixture {
         vm.stopPrank();
     }
 
-    function deployBatchOnChain(uint16[] memory chainIds_)
+    function deployBatchOnChain(uint16[] calldata chainIds_)
         public
         returns (address[] memory vaultsv2_, address[] memory endpoints_, address[] memory rewardTokens_)
     {
@@ -80,5 +80,16 @@ contract LayerZeroHelper is Test, VaultFixture {
             }
         }
         vm.stopPrank();
+    }
+
+    function repeatedEntries(uint16[] calldata array) internal pure returns (bool valid) {
+        uint256 size = array.length;
+        for (uint256 i = 0; i < size; i++) {
+            for (uint256 j = 0; j < size; j++) {
+                if (i != j) {
+                    if (array[i] == array[j]) valid = true;
+                }
+            }
+        }
     }
 }
