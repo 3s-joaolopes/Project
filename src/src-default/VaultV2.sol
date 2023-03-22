@@ -117,13 +117,19 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         uint128 shares_ = uint128(compacted_ >> 128);
         uint64 depositTime_ = uint64((compacted_ >> 64) & 0xffffffffffffffff);
         uint64 expireTime_ = uint64(compacted_ & 0xffffffffffffffff);
+        uint64 insertPosition_ = getInsertPosition(expireTime_);
 
-        uint64 hint_ = getInsertPosition(expireTime_);
-        _depositList[_idCounter].expireTime = expireTime_;
-        _depositList[_idCounter].shares = shares_;
+        _depositList[_idCounter] = Deposit({
+            depositor: address(0),
+            deposit: 0,
+            shares: shares_,
+            rewardsPerShare: 0,
+            expireTime: expireTime_,
+            nextId: _depositList[insertPosition_].nextId
+        });
         _updateRewardsPerShare(shares_, true, depositTime_);
 
-        _depositList[hint_].nextId = _idCounter;
+        _depositList[insertPosition_].nextId = _idCounter;
         _idCounter++;
 
         emit LogOmnichainDeposit(srcChainId_, fromAddress_, shares_, depositTime_, expireTime_);
@@ -261,7 +267,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
             bytes memory trustedRemote = _trustedRemoteLookup[chainId_];
 
             lzEndpoint.send{ value: SEND_VALUE }(
-                chainId_, trustedRemote, payload_, payable(msg.sender), address(0x0), bytes("")
+                chainId_, trustedRemote, payload_, payable(_owner), address(0x0), bytes("")
             );
             chainId_ = _chainIdList[chainId_];
         }
