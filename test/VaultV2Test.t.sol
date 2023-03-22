@@ -37,7 +37,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         chainIds_[0] = CHAIN_ID_1;
         chainIds_[1] = CHAIN_ID_2;
         (address[] memory vaultsv2_, address[] memory endpoints_, address[] memory rewardTokens_) =
-            deployBatchOnChain(chainIds_);
+            this.deployBatchOnChain(chainIds_);
         connectVaults(chainIds_, vaultsv2_, endpoints_);
 
         vaultv2_chain1 = VaultV2(vaultsv2_[0]);
@@ -67,7 +67,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64 hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
         vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
         vm.stopPrank();
 
         // Fast-forward 12 months
@@ -89,7 +89,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2.getDepositIds(alice);
         vaultv2.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -102,7 +102,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
         vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
 
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
@@ -112,7 +112,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        assert(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -125,7 +125,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64 hint = vaultv2_chain1.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain1), ALICE_INITIAL_LP_BALANCE);
         vaultv2_chain1.deposit(uint128(ALICE_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
         vm.stopPrank();
 
         // Fast-forward 3 months
@@ -137,7 +137,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         hint = vaultv2_chain2.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vaultv2_chain2), BOB_INITIAL_LP_BALANCE);
         vaultv2_chain2.deposit(uint128(BOB_INITIAL_LP_BALANCE), monthsLocked, hint);
-        require(LPtoken.balanceOf(bob) == 0, "Failed to assert bob balance after deposit");
+        assert(LPtoken.balanceOf(bob) == 0);
         vm.stopPrank();
 
         // Check if vaults are in sync
@@ -147,7 +147,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         totalShares_chain2 = totalShares_chain2 & 0xffffffffffffffffffffffffffffffff;
         console.log("Number of shares:", totalShares_chain1, "<->", totalShares_chain2);
         uint128 expectedValue = uint128(ALICE_INITIAL_LP_BALANCE + BOB_INITIAL_LP_BALANCE * 2);
-        require(totalShares_chain2 == totalShares_chain2 && totalShares_chain2 == expectedValue, "Vaults not in sync");
+        assert(totalShares_chain2 == totalShares_chain2 && totalShares_chain2 == expectedValue);
 
         // Fast-forward 5 months
         vm.warp(time += 5 * SECONDS_IN_30_DAYS);
@@ -158,7 +158,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        require(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)), "Incorrect alice rewards");
+        assert(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
@@ -167,7 +167,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         vaultv2_chain2.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
         console.log("Bob:", rewardToken_chain2.balanceOf(bob), "<->", uint256(expectedValue));
-        //require(similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)), "Incorrect bob rewards");
+        assert(similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vaultv2_chain2.withdraw();
         vm.stopPrank();
@@ -184,16 +184,17 @@ contract VaultV2Test is Test, LayerZeroHelper {
 
         // Check if withdrawals were successful
         uint256 balance = LPtoken.balanceOf(alice);
-        require(balance == ALICE_INITIAL_LP_BALANCE, "Failed to assert alice's balance");
+        assert(balance == ALICE_INITIAL_LP_BALANCE);
         balance = LPtoken.balanceOf(bob);
-        require(balance == BOB_INITIAL_LP_BALANCE, "Failed to assert bob's balance");
+        assert(balance == BOB_INITIAL_LP_BALANCE);
     }
 }
 
 /*
+        //Change variable to public
         vm.record();
         contract.variable();
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(contract));
         console.log("reads size:", uint256(reads.length));
         console.log("reads 0:", uint256(reads[0]));
-        console.log("reads 1:", uint256(reads[1]));*/
+        console.log("reads 1 (should be the slot):", uint256(reads[1]));*/

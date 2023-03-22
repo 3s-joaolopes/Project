@@ -64,7 +64,7 @@ contract ProxyTest is Test, VaultFixture {
         uint64 hint = vault.getInsertPosition(uint64(block.timestamp) + monthsLocked * SECONDS_IN_30_DAYS);
         LPtoken.approve(address(vault), ALICE_INITIAL_LP_BALANCE);
         vault.deposit(uint128(ALICE_INITIAL_LP_BALANCE), uint64(monthsLocked), uint64(hint));
-        require(LPtoken.balanceOf(alice) == 0, "Failed to assert alice balance after deposit");
+        assert(LPtoken.balanceOf(alice) == 0);
 
         // Fast-forward 12 months
         vm.warp(time += 12 * SECONDS_IN_30_DAYS);
@@ -74,7 +74,7 @@ contract ProxyTest is Test, VaultFixture {
         uint64[] memory depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        require(similar(rewardToken.balanceOf(alice), uint256(expectedValue)), "Incorrect rewards");
+        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 }

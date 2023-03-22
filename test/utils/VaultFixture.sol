@@ -35,11 +35,11 @@ contract VaultFixture is Test {
         vm.label(bob, "Bob");
 
         //sanity checks
-        require(similar(100, 110) == false, "similar failed 1");
-        require(similar(110, 100) == false, "similar failed 2");
-        require(similar(100, 101) == true, "similar failed 3");
-        require(similar(101, 100) == true, "similar failed 4");
-        require(similar(100, 100) == true, "similar failed 4");
+        assert(similar(100, 110) == false);
+        assert(similar(110, 100) == false);
+        assert(similar(100, 101) == true);
+        assert(similar(101, 100) == true);
+        assert(similar(100, 100) == true);
     }
 
     function similar(uint256 a, uint256 b) public pure returns (bool result) {
@@ -60,7 +60,7 @@ contract VaultFixture is Test {
         //sanity check
         if (receiver_ != deployer) {
             uint256 balance = LPtoken.balanceOf(receiver_);
-            require(balance == amount_, "Failed to give LP tokens");
+            assert(balance == amount_);
         }
 
         vm.stopPrank();
@@ -73,9 +73,7 @@ contract VaultFixture is Test {
             IVault(vaultAddr_).getInsertPosition(uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS);
         LPtoken.approve(vaultAddr_, deposit_);
         IVault(vaultAddr_).deposit(deposit_, monthsLocked_, hint_);
-        require(
-            LPtoken.balanceOf(depositor_) == startingBalance - deposit_, "Failed to assert alice balance after deposit"
-        );
+        assert(LPtoken.balanceOf(depositor_) == startingBalance - deposit_);
         vm.stopPrank();
     }
 
@@ -108,7 +106,7 @@ contract VaultFixture is Test {
                 block.timestamp * 2
             )
         );
-        require(success);
+        assert(success);
 
         // Get the pair to interact with
         (, bytes memory data) =
