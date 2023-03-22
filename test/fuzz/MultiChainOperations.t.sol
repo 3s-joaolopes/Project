@@ -13,34 +13,62 @@ import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
 contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
-    uint256 numberOfChains;
+    uint256 constant MAX_CHAINS = 7;
+    uint128 constant DEPOSIT = 1 ether;
+    address constant DEPOSITOR = address(3);
+    uint64 constant MONTHS_LOCKED = 12;
+    uint64 constant RANDOM_HINT = 3;
+    uint256 numberOfVaults;
+    uint256 expectedRewards;
 
     function setUp() public override {
         super.setUp();
     }
 
-    function _testFuzz_LayerZeroFunctionality(uint16[] memory chainIds_) external {
-        //Check for repeated entries
-        numberOfChains = chainIds_.length;
-        for (uint256 i = 0; i < numberOfChains; i++) {
+    function testFuzz_LayerZeroFunctionality(uint16[] calldata chainIds_) external {
+        // Initial setup
+        vm.assume(chainIds_.length > 0);
+        numberOfVaults = bound(chainIds_.length, 1, MAX_CHAINS);
+        chainIds_ = chainIds_[0:numberOfVaults];
+        vm.assume(repeatedEntries(chainIds_) == false);
+        for (uint256 i = 0; i < numberOfVaults; i++) {
             vm.assume(chainIds_[i] != 998);
         }
-        uint128 deposit_ = 1 ether;
-        address depositor_ = alice;
-        uint64 monthsLocked_ = 12;
-        uint64 randomHint_ = 3;
-        giveLPtokens(depositor_, numberOfChains * deposit_);
+        giveLPtokens(DEPOSITOR, numberOfVaults * DEPOSIT);
 
+        // Deploy and connect vaults
         (address[] memory vaultsv2_, address[] memory endpoints_, address[] memory rewardTokens_) =
             deployBatchOnChain(chainIds_);
         connectVaults(chainIds_, vaultsv2_, endpoints_);
 
+        // Start simulation
+        vm.warp(time);
+        vm.startPrank(DEPOSITOR);
+
         // Make deposits
-        for (uint256 i = 0; i < numberOfChains; i++) {
-            vm.startPrank(depositor_);
-            LPtoken.approve(vaultsv2_[i], uint256(deposit_));
-            IVaultV2(vaultsv2_[i]).deposit(deposit_, monthsLocked_, randomHint_);
-            vm.stopPrank();
+        for (uint256 i = 0; i < numberOfVaults; i++) {
+            LPtoken.approve(vaultsv2_[i], uint256(DEPOSIT));
+            IVaultV2(vaultsv2_[i]).deposit(DEPOSIT, MONTHS_LOCKED, RANDOM_HINT);
         }
+        assert(LPtoken.balanceOf(DEPOSITOR) == 0);
+
+        // Fast-forward 12 months
+        vm.warp(time += 12 * SECONDS_IN_30_DAYS);
+
+        // Withdraw deposits
+        for (uint256 i = 0; i < numberOfVaults; i++) {
+            IVaultV2(vaultsv2_[i]).withdraw();
+        }
+        assert(LPtoken.balanceOf(DEPOSITOR) == numberOfVaults * DEPOSIT);
+
+        // Claim rewards
+        expectedRewards = uint256(REWARDS_PER_MONTH) * 12 / numberOfVaults;
+        for (uint256 i = 0; i < numberOfVaults; i++) {
+            uint64[] memory depositIds = IVaultV2(vaultsv2_[i]).getDepositIds(DEPOSITOR);
+            IVaultV2(vaultsv2_[i]).claimRewards(depositIds);
+            assert(similar(OFToken(rewardTokens_[i]).balanceOf(DEPOSITOR), expectedRewards));
+        }
+
+        vm.stopPrank();
     }
 }
