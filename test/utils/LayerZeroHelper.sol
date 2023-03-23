@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol";
+import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
 import { VaultFixture } from "./../utils/VaultFixture.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
@@ -18,10 +18,9 @@ contract LayerZeroHelper is Test, VaultFixture {
 
     function deployOnChain(uint16 chainId_)
         public
+        isDeployer
         returns (address vaultv2_, address endpoint_, address rewardToken_)
     {
-        vm.startPrank(deployer);
-
         VaultV2 vaultImplementation = new VaultV2();
         endpoint_ = address(new LZEndpointMock(chainId_));
 
@@ -33,19 +32,16 @@ contract LayerZeroHelper is Test, VaultFixture {
 
         // To cover LayerZero fees
         vm.deal(address(vaultv2_), 100 ether);
-
-        vm.stopPrank();
     }
 
     function deployBatchOnChain(uint16[] calldata chainIds_)
         public
+        isDeployer
         returns (address[] memory vaultsv2_, address[] memory endpoints_, address[] memory rewardTokens_)
     {
         vaultsv2_ = new address[](chainIds_.length);
         endpoints_ = new address[](chainIds_.length);
         rewardTokens_ = new address[](chainIds_.length);
-
-        vm.startPrank(deployer);
 
         for (uint256 i = 0; i < chainIds_.length; i++) {
             VaultV2 vaultImplementation = new VaultV2();
@@ -60,15 +56,15 @@ contract LayerZeroHelper is Test, VaultFixture {
             // To cover LayerZero fees
             vm.deal(address(vaultsv2_[i]), 100 ether);
         }
-
-        vm.stopPrank();
     }
 
-    function connectVaults(uint16[] memory chainIds_, address[] memory vaultsv2_, address[] memory endpoints_) public {
+    function connectVaults(uint16[] memory chainIds_, address[] memory vaultsv2_, address[] memory endpoints_)
+        public
+        isDeployer
+    {
         assert(vaultsv2_.length == chainIds_.length);
         assert(vaultsv2_.length == endpoints_.length);
 
-        vm.startPrank(deployer);
         for (uint256 i = 0; i < vaultsv2_.length; i++) {
             for (uint256 j = 0; j < vaultsv2_.length; j++) {
                 if (i != j) {
@@ -76,18 +72,6 @@ contract LayerZeroHelper is Test, VaultFixture {
                     bytes memory trustedRemoteAddress = abi.encodePacked(address(vaultsv2_[j]), address(vaultsv2_[i]));
                     VaultV2(vaultsv2_[i]).addTrustedRemoteAddress(chainIds_[j], trustedRemoteAddress);
                     LZEndpointMock(endpoints_[i]).setDestLzEndpoint(vaultsv2_[j], endpoints_[j]);
-                }
-            }
-        }
-        vm.stopPrank();
-    }
-
-    function repeatedEntries(uint16[] calldata array) internal pure returns (bool valid) {
-        uint256 size = array.length;
-        for (uint256 i = 0; i < size; i++) {
-            for (uint256 j = 0; j < size; j++) {
-                if (i != j) {
-                    if (array[i] == array[j]) valid = true;
                 }
             }
         }

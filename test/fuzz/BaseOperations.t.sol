@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol";
+import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
 import { VaultFixture } from "./../utils/VaultFixture.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
@@ -11,9 +11,11 @@ import { Vault } from "src/src-default/Vault.sol";
 import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
+import { Lib } from "test/utils/Library.sol";
 
 contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
     uint16 constant CHAIN_ID = 1;
+    address constant OTHER_USER = address(1);
 
     VaultV2 public vaultv2;
     LZEndpointMock public endpoint;
@@ -28,11 +30,13 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         rewardToken = OFToken(rewardTokenAddr);
     }
 
-    function testFuzz_Deposit(address depositor_, uint128 deposit_, uint64 monthsLocked_, uint64 hint_) external {
+    function testFuzz_Deposit(address depositor_, uint128 depositSeed_, uint64 monthsLockedSeed_, uint64 hint_)
+        external
+    {
         vm.assume(depositor_ != address(0));
         vm.assume(depositor_ != router);
-        deposit_ = uint128(bound(deposit_, 0, 1_000_000 ether));
-        monthsLocked_ = uint64(bound(monthsLocked_, 0, 50));
+        uint128 deposit_ = uint128(Lib.getRandomNumberInRange(0, 1_000_000 ether, depositSeed_));
+        uint64 monthsLocked_ = uint64(Lib.getRandomNumberInRange(0, 50, monthsLockedSeed_));
 
         giveLPtokens(depositor_, uint256(deposit_));
         vm.warp(time);
@@ -55,17 +59,21 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         vm.stopPrank();
     }
 
-    function testFuzz_Withdraw(address depositor_, uint128 deposit_, uint64 monthsLocked_, uint64 timeToWithdraw_)
-        external
-    {
+    function testFuzz_Withdraw(
+        address depositor_,
+        uint256 depositSeed_,
+        uint256 monthsLockedSeed_,
+        uint64 timeToWithdraw_
+    ) external {
         vm.assume(depositor_ != address(0));
-        vm.assume(depositor_ != address(1));
+        vm.assume(depositor_ != OTHER_USER);
         vm.assume(depositor_ != router);
-        deposit_ = uint128(bound(deposit_, 1000, 100_000 ether));
-        monthsLocked_ = uint64(bound(monthsLocked_, 6, 48));
+        uint128 deposit_ = uint128(Lib.getRandomNumberInRange(1000, 100_000 ether, depositSeed_));
+        uint64 monthsLocked_ = uint64(Lib.getRandomNumberInRange(6, 48, monthsLockedSeed_));
+
         vm.assume(monthsLocked_ == 6 || monthsLocked_ == 12 || monthsLocked_ == 24 || monthsLocked_ == 48);
         giveLPtokens(depositor_, uint256(deposit_));
-        giveLPtokens(address(1), uint256(deposit_));
+        giveLPtokens(OTHER_USER, uint256(deposit_));
 
         vm.warp(time);
         deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
@@ -73,7 +81,7 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         // Fast-forward
         vm.warp(time += timeToWithdraw_);
         // Someone else deposits tokens updating the list
-        deposit(address(vaultv2), address(1), 1000, 6);
+        deposit(address(vaultv2), OTHER_USER, 1000, 6);
 
         // Withdraw
         vm.startPrank(depositor_);
@@ -91,18 +99,21 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         vm.stopPrank();
     }
 
-    function testFuzz_ClaimRewards(address depositor_, uint128 deposit_, uint64 monthsLocked_, uint64 timeInterval_)
-        external
-    {
+    function testFuzz_ClaimRewards(
+        address depositor_,
+        uint256 depositSeed_,
+        uint256 monthsLockedSeed_,
+        uint256 timeIntervalSeed_
+    ) external {
         vm.assume(depositor_ != address(0));
-        vm.assume(depositor_ != address(1));
+        vm.assume(depositor_ != OTHER_USER);
         vm.assume(depositor_ != router);
-        deposit_ = uint128(bound(deposit_, 1 ether, 100_000 ether));
-        monthsLocked_ = uint64(bound(monthsLocked_, 6, 48));
-        timeInterval_ = uint64(bound(timeInterval_, 7 days, 1000 ether));
+        uint128 deposit_ = uint128(Lib.getRandomNumberInRange(1000, 100_000 ether, depositSeed_));
+        uint64 monthsLocked_ = uint64(Lib.getRandomNumberInRange(6, 48, monthsLockedSeed_));
+        uint64 timeInterval_ = uint64(Lib.getRandomNumberInRange(7 days, 10_000 days, timeIntervalSeed_));
         vm.assume(monthsLocked_ == 6 || monthsLocked_ == 12 || monthsLocked_ == 24 || monthsLocked_ == 48);
         giveLPtokens(depositor_, uint256(deposit_));
-        giveLPtokens(address(1), uint256(deposit_));
+        giveLPtokens(OTHER_USER, uint256(deposit_));
 
         vm.warp(time);
         deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
@@ -110,12 +121,12 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         // Fast-forward
         vm.warp(time += timeInterval_);
         // Someone else deposits tokens updating the list
-        deposit(address(vaultv2), address(1), 1000, 6);
+        deposit(address(vaultv2), OTHER_USER, 1000, 6);
 
         // Claim Rewards
         vm.startPrank(depositor_);
         uint64[] memory depositIds_ = vaultv2.getDepositIds(depositor_);
-        uint128 expectedValue;
+        uint128 expectedRewards;
         uint128 claimableRewards = vaultv2.getClaimableRewards(depositor_, depositIds_);
         if ((uint256(timeInterval_) * uint256(REWARDS_PER_SECOND) * 1 ether / uint256(deposit_)) == 0) {
             // not enough time for rewards
@@ -123,14 +134,13 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
             vaultv2.claimRewards(depositIds_);
             return;
         } else if (timeInterval_ < monthsLocked_ * SECONDS_IN_30_DAYS) {
-            expectedValue = REWARDS_PER_SECOND * timeInterval_;
+            expectedRewards = REWARDS_PER_SECOND * timeInterval_;
         } else {
-            expectedValue = REWARDS_PER_MONTH * monthsLocked_;
+            expectedRewards = REWARDS_PER_MONTH * monthsLocked_;
         }
         vaultv2.claimRewards(depositIds_);
-        emit log_uint(expectedValue);
-        assert(similar(uint256(claimableRewards), uint256(expectedValue)));
-        assert(similar(rewardToken.balanceOf(depositor_), uint256(expectedValue)));
+        assert(Lib.similar(uint256(claimableRewards), uint256(expectedRewards)));
+        assert(Lib.similar(rewardToken.balanceOf(depositor_), uint256(expectedRewards)));
 
         vm.stopPrank();
     }

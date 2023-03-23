@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol";
+import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
 import { VaultFixture } from "./../utils/VaultFixture.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
@@ -11,6 +11,7 @@ import { Vault } from "src/src-default/Vault.sol";
 import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
+import { Lib } from "test/utils/Library.sol";
 
 contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
     uint256 constant MAX_CHAINS = 7;
@@ -30,7 +31,7 @@ contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
         vm.assume(chainIds_.length > 0);
         numberOfVaults = bound(chainIds_.length, 1, MAX_CHAINS);
         chainIds_ = chainIds_[0:numberOfVaults];
-        vm.assume(repeatedEntries(chainIds_) == false);
+        vm.assume(Lib.repeatedEntries(chainIds_) == false);
         for (uint256 i = 0; i < numberOfVaults; i++) {
             vm.assume(chainIds_[i] != 998);
         }
@@ -66,7 +67,7 @@ contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
         for (uint256 i = 0; i < numberOfVaults; i++) {
             uint64[] memory depositIds = IVaultV2(vaultsv2_[i]).getDepositIds(DEPOSITOR);
             IVaultV2(vaultsv2_[i]).claimRewards(depositIds);
-            assert(similar(OFToken(rewardTokens_[i]).balanceOf(DEPOSITOR), expectedRewards));
+            assert(Lib.similar(OFToken(rewardTokens_[i]).balanceOf(DEPOSITOR), expectedRewards));
         }
 
         vm.stopPrank();
