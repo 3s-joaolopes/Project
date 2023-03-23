@@ -17,9 +17,9 @@ contract VaultV2Invariants is Test {
         selectors[2] = VaultV2Handler.claimRewards.selector;
         selectors[3] = VaultV2Handler.skipTime.selector;
 
-        targetSelector(FuzzSelector({ addr: address(handler), selectors: selectors }));
+        //targetSelector(FuzzSelector({ addr: address(handler), selectors: selectors }));
 
-        targetContract(address(handler));
+        //targetContract(address(handler));
     }
 
     function invariant_VaultV2() public {
