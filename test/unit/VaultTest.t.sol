@@ -3,10 +3,13 @@ pragma solidity ^0.8.0;
 
 import "@forge-std/Test.sol"; // to get console.log
 
-import { VaultFixture } from "./utils/VaultFixture.sol";
+import { Test } from "@forge-std/Test.sol";
+import { console2 } from "@forge-std/console2.sol";
+import { VaultFixture } from "./../utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
+import { Lib } from "test/utils/Library.sol";
 
 contract VaultTest is Test, VaultFixture {
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
@@ -96,9 +99,9 @@ contract VaultTest is Test, VaultFixture {
         // Alice claims her rewards
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
         depositIds = vault.getDepositIds(alice);
-        assert(similar(vault.getClaimableRewards(alice, depositIds), uint256(expectedValue)));
+        assert(Lib.similar(vault.getClaimableRewards(alice, depositIds), uint256(expectedValue)));
         vault.claimRewards(depositIds);
-        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -131,7 +134,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 3;
-        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Fast-forward 9 months
         vm.warp(time += 9 * SECONDS_IN_30_DAYS);
@@ -141,7 +144,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 12;
-        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Fast-forward 6 months
         vm.warp(time += 3 * SECONDS_IN_30_DAYS);
@@ -151,7 +154,7 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 15;
-        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         vm.stopPrank();
     }
@@ -197,8 +200,8 @@ contract VaultTest is Test, VaultFixture {
         vm.startPrank(alice);
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        console.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", REWARDS_PER_MONTH * 3);
-        assert(similar(rewardToken.balanceOf(alice), uint256(REWARDS_PER_MONTH * 3)));
+        console2.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", REWARDS_PER_MONTH * 3);
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(REWARDS_PER_MONTH * 3)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
@@ -212,8 +215,8 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        console.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
-        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
+        console2.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
@@ -221,8 +224,8 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
-        console.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
-        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
+        console2.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
+        assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
         vm.stopPrank();
@@ -246,16 +249,16 @@ contract VaultTest is Test, VaultFixture {
 
         // Print reward token balances
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        console.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
-        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
+        console2.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 9;
-        console.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
-        assert(similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
+        console2.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
+        assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 15;
-        console.log(
+        console2.log(
             "Total rewards:", rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), "->", uint256(expectedValue)
         );
-        assert(similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Check if withdrawls were successful
         uint256 balance = LPtoken.balanceOf(alice);

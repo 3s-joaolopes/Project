@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol";
+import { Test } from "@forge-std/Test.sol";
+import { console2 } from "@forge-std/console2.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
-import { VaultFixture } from "./utils/VaultFixture.sol";
-import { LayerZeroHelper } from "./utils/LayerZeroHelper.sol";
+import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
+import { Lib } from "test/utils/Library.sol";
 
 contract VaultV2Test is Test, LayerZeroHelper {
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
@@ -89,7 +91,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2.getDepositIds(alice);
         vaultv2.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -112,7 +114,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        assert(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 
@@ -145,7 +147,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         totalShares_chain1 = totalShares_chain1 & 0xffffffffffffffffffffffffffffffff;
         uint256 totalShares_chain2 = uint256(vm.load(address(vaultv2_chain2), bytes32(uint256(101))));
         totalShares_chain2 = totalShares_chain2 & 0xffffffffffffffffffffffffffffffff;
-        console.log("Number of shares:", totalShares_chain1, "<->", totalShares_chain2);
+        console2.log("Number of shares in both chains:", totalShares_chain1, "<->", totalShares_chain2);
         uint128 expectedValue = uint128(ALICE_INITIAL_LP_BALANCE + BOB_INITIAL_LP_BALANCE * 2);
         assert(totalShares_chain2 == totalShares_chain2 && totalShares_chain2 == expectedValue);
 
@@ -158,7 +160,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         uint64[] memory depositIds = vaultv2_chain1.getDepositIds(alice);
         vaultv2_chain1.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        assert(similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken_chain1.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
 
         // Bob claims rewards and tries to withdraw deposit
@@ -166,8 +168,8 @@ contract VaultV2Test is Test, LayerZeroHelper {
         depositIds = vaultv2_chain2.getDepositIds(bob);
         vaultv2_chain2.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
-        console.log("Bob:", rewardToken_chain2.balanceOf(bob), "<->", uint256(expectedValue));
-        assert(similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)));
+        console2.log("Bob rewards:", rewardToken_chain2.balanceOf(bob), "<->", uint256(expectedValue));
+        assert(Lib.similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vaultv2_chain2.withdraw();
         vm.stopPrank();
@@ -195,6 +197,6 @@ contract VaultV2Test is Test, LayerZeroHelper {
         vm.record();
         contract.variable();
         (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(contract));
-        console.log("reads size:", uint256(reads.length));
-        console.log("reads 0:", uint256(reads[0]));
-        console.log("reads 1 (should be the slot):", uint256(reads[1]));*/
+        console2.log("reads size:", uint256(reads.length));
+        console2.log("reads 0:", uint256(reads[0]));
+        console2.log("reads 1 (should be the slot):", uint256(reads[1]));*/

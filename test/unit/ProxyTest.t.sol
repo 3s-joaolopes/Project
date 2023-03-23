@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol";
-
+import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
-import { VaultFixture } from "./utils/VaultFixture.sol";
+import { VaultFixture } from "./../utils/VaultFixture.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { VaultTest } from "./VaultTest.t.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
+import { Lib } from "test/utils/Library.sol";
 
 contract ProxyTest is Test, VaultFixture {
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
@@ -74,7 +74,7 @@ contract ProxyTest is Test, VaultFixture {
         uint64[] memory depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         uint128 expectedValue = REWARDS_PER_MONTH * 6;
-        assert(similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
+        assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
     }
 }
