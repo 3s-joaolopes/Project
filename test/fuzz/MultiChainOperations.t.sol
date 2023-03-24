@@ -14,6 +14,7 @@ import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 import { Lib } from "test/utils/Library.sol";
 
 contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
+    uint256 constant MIN_CHAINS = 1;
     uint256 constant MAX_CHAINS = 7;
     uint128 constant DEPOSIT = 1 ether;
     address constant DEPOSITOR = address(3);
@@ -29,7 +30,7 @@ contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
     function testFuzz_LayerZeroFunctionality_SkipCI(uint16[] calldata chainIds_) external {
         // Initial setup
         vm.assume(chainIds_.length > 0);
-        numberOfVaults = bound(chainIds_.length, 1, MAX_CHAINS);
+        numberOfVaults = bound(chainIds_.length, MIN_CHAINS, MAX_CHAINS);
         chainIds_ = chainIds_[0:numberOfVaults];
         vm.assume(Lib.repeatedEntries(chainIds_) == false);
         for (uint256 i = 0; i < numberOfVaults; i++) {
