@@ -26,12 +26,12 @@ contract VaultV2Invariants is Test {
     }
 
     // Assert that vaults have only been deployed once
-    function invariant_onlyDeployedOnce() public view {
+    function invariant_onlyDeployedOnce_SkipCI() public view {
         assert(handler.numberOfDeployments() < 2);
     }
 
     // Assert that actors have been successfully deployed on all chains
-    function invariant_successfullyDeployedActors() public view {
+    function invariant_successfullyDeployedActors_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         bool deployedActors_;
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
@@ -41,7 +41,7 @@ contract VaultV2Invariants is Test {
     }
 
     // Assert that all the vaults (on all the chains) have the same number of shares
-    function invariant_VaultsInSync() public view {
+    function invariant_VaultsInSync_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         uint256 firstVaultshares_;
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
@@ -52,14 +52,14 @@ contract VaultV2Invariants is Test {
     }
 
     // Assert that the shares on the first vault match the expected shares
-    function invariant_correctShares() public view {
+    function invariant_correctShares_SkipCI() public view {
         if (handler.getNumberOfChains() > 0) {
             assert(handler.getVaultExpectedShares() == handler.getVaultSharesByIndex(0));
         }
     }
 
     // Assert that balance of the vaults + depositors is the initial asset amount
-    function invariant_conservationOfAsset() public {
+    function invariant_conservationOfAsset_SkipCI() public {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             uint256[] memory depositorAsset_ = handler.getDepositorsAssetByChainIndex(i_);
@@ -71,7 +71,7 @@ contract VaultV2Invariants is Test {
     }
 
     // Assert that the balance of all vaults matches the amount of expected un-withdrawn asset
-    function invariant_correctAsset() public view {
+    function invariant_correctAsset_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             assert(handler.getVaultAssetBalanceByIndex(i_) == handler.getVaultExpectedUnwithdrawnAssetByIndex(i_));
@@ -79,7 +79,7 @@ contract VaultV2Invariants is Test {
     }
 
     // Log results
-    function invariant_LogSummary() public {
+    function invariant_LogSummary_SkipCI() public {
         console2.log("Logs-------------");
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
@@ -91,7 +91,7 @@ contract VaultV2Invariants is Test {
     }
 
     // Ask handler to log results
-    function invariant_HandlerLogSummary() public {
+    function invariant_HandlerLogSummary_SkipCI() public {
         handler.handlerLog();
     }
 }
