@@ -43,7 +43,7 @@ jobs:
 
       - name: Run the tests
         run: |
-          forge test -vvv
+          make tests-ci
         id: test
   
   static-analysis:

@@ -39,6 +39,9 @@ lint:
 tests :;
 	@forge test -vvv
 
+tests-ci :;
+	@forge test -vvv --no-match-test "SkipCI"
+
 # Run tests with coverage
 coverage :;
 	@forge coverage
