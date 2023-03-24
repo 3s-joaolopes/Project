@@ -36,13 +36,23 @@ library Lib {
     /// @param  array_ array to check
     /// @return valid_ whether there are repeated entries or not
     function repeatedEntries(uint16[] calldata array_) public pure returns (bool valid_) {
-        uint256 size = array_.length;
-        for (uint256 i = 0; i < size; i++) {
-            for (uint256 j = 0; j < size; j++) {
-                if (i != j) {
-                    if (array_[i] == array_[j]) valid_ = true;
+        uint256 size_ = array_.length;
+        for (uint256 i_ = 0; i_ < size_; i_++) {
+            for (uint256 j_ = 0; j_ < size_; j_++) {
+                if (i_ != j_) {
+                    if (array_[i_] == array_[j_]) valid_ = true;
                 }
             }
+        }
+    }
+
+    /// @notice Get the sum of all ements in array
+    /// @param  array_ array
+    /// @return sum_ sum of all elements in array
+    function sumOfElements(uint256[] calldata array_) public pure returns (uint256 sum_) {
+        uint256 size_ = array_.length;
+        for (uint256 i_ = 0; i_ < size_; i_++) {
+            sum_ += array_[i_];
         }
     }
 }
