@@ -7,6 +7,7 @@ import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
 import { Lib } from "test/utils/Library.sol";
+import { console2 } from "@forge-std/console2.sol";
 
 contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -15,9 +16,10 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     uint256 constant MIN_VAULTS = 2;
     uint256 constant MAX_VAULTS = 5;
-    uint256 constant MAX_DEPOSITORS_PER_VAULT = 6;
+    uint256 constant MIN_DEPOSITORS_PER_VAULT = 1;
+    uint256 constant MAX_DEPOSITORS_PER_VAULT = 4;
     uint256 constant DEPOSITOR_INITIAL_ASSET = 1_000_000 ether;
-    uint128 constant MAX_DEPOSIT = 1000 ether;
+    uint128 constant MAX_DEPOSIT = 10 ether;
     uint128 constant MAX_TIME_INTERVAL = 12 * SECONDS_IN_30_DAYS;
     uint256 constant SHARES_SLOT = 101;
 
@@ -61,10 +63,14 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     uint64[4] private _lockPeriods = [6, 12, 24, 48];
     address private _currentActor;
-    Chain_Lz private _currentChain;
+    uint256 private _chainIndex;
+    uint256 public numberOfDeployments;
+    //Chain_Lz private _currentChain;
     Random_struct private _chain_random;
 
     mapping(uint256 => Deposit[]) public ghost_deposits;
+
+    mapping(address => bool) private _invalidDepositorAdresses;
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Modifiers -------------------------------------------------------------------------------------------------------------------------//
@@ -72,12 +78,12 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     modifier useChain(uint256 chainSeed_) {
         if (chains.length == 0) _deployOnChains(chainSeed_);
-        _currentChain = _getChain(chainSeed_);
+        _chainIndex = _getChainIndex(chainSeed_);
         _;
     }
 
     modifier useActor(uint256 actorSeed_) {
-        if (_currentChain.depositors.length == 0) _deployActors(actorSeed_);
+        if (chains[_chainIndex].depositors.length == 0) _deployActors(actorSeed_);
         _currentActor = _getActor(actorSeed_);
         vm.startPrank(_currentActor);
         _;
@@ -90,6 +96,15 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     constructor() {
         super.setUp();
+        _invalidDepositorAdresses[address(LPtoken)] = true;
+        _invalidDepositorAdresses[address(this)] = true;
+        _invalidDepositorAdresses[address(0)] = true;
+    }
+
+    function handlerLog() external {
+        console2.log("Logs-------------");
+        uint256 numberOfChains_ = chains.length;
+        console2.log("Chains: ", numberOfChains_);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -99,19 +114,19 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     function deposit(uint256 seed_, uint64 hint_) external useChain(seed_) useActor(seed_) {
         uint128 deposit_ = uint128(Lib.getRandomNumberInRange(MIN_DEPOSIT, MAX_DEPOSIT, seed_));
         uint64 monthsLocked_ = _lockPeriods[(seed_ % _lockPeriods.length)];
-        LPtoken.approve(address(_currentChain.vaultV2), deposit_);
-        _currentChain.vaultV2.deposit(deposit_, monthsLocked_, hint_);
-        _addDepositToList(_currentChain.chainIndex, _currentActor, uint256(deposit_), uint256(monthsLocked_));
+        LPtoken.approve(address(chains[_chainIndex].vaultV2), deposit_);
+        chains[_chainIndex].vaultV2.deposit(deposit_, monthsLocked_, hint_);
+        _addDepositToList(chains[_chainIndex].chainIndex, _currentActor, uint256(deposit_), uint256(monthsLocked_));
     }
 
     function withdraw(uint256 seed_) external useChain(seed_) useActor(seed_) {
-        _currentChain.vaultV2.withdraw();
-        _setDepositsAsWithdrawn(_currentChain.chainIndex, _currentActor);
+        chains[_chainIndex].vaultV2.withdraw();
+        _setDepositsAsWithdrawn(chains[_chainIndex].chainIndex, _currentActor);
     }
 
     function claimRewards(uint256 seed_) external useChain(seed_) useActor(seed_) {
-        uint64[] memory depositIds_ = _currentChain.vaultV2.getDepositIds(_currentActor);
-        _currentChain.vaultV2.claimRewards(depositIds_);
+        uint64[] memory depositIds_ = chains[_chainIndex].vaultV2.getDepositIds(_currentActor);
+        chains[_chainIndex].vaultV2.claimRewards(depositIds_);
     }
 
     function skipTime(uint256 seed_) external {
@@ -127,7 +142,11 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         numberOfChains_ = chains.length;
     }
 
-    function getVaultSharesByChainIndex(uint256 chainIndex_) external view returns (uint256 totalShares_) {
+    function getNumberOfDepositorsOnChain(uint256 chainIndex_) external view returns (uint256 numberOfDepositors_) {
+        numberOfDepositors_ = chains[chainIndex_].depositors.length;
+    }
+
+    function getVaultSharesByIndex(uint256 chainIndex_) external view returns (uint256 totalShares_) {
         address vaultAddr = address(chains[chainIndex_].vaultV2);
         uint256 slotData_ = uint256(vm.load(vaultAddr, bytes32(uint256(SHARES_SLOT))));
         totalShares_ = slotData_ & 0xffffffffffffffffffffffffffffffff;
@@ -145,12 +164,12 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }
 
-    function getVaultAssetBalanceByChainIndex(uint256 chainIndex_) external view returns (uint256 assetBalance_) {
+    function getVaultAssetBalanceByIndex(uint256 chainIndex_) external view returns (uint256 assetBalance_) {
         address vaultAddr = address(chains[chainIndex_].vaultV2);
         assetBalance_ = getLPTokenBalance(vaultAddr);
     }
 
-    function getVaultUnwithdrawnAssetByChainIndex(uint256 chainIndex_)
+    function getVaultExpectedUnwithdrawnAssetByIndex(uint256 chainIndex_)
         external
         view
         returns (uint256 unwithdrawnAsset_)
@@ -172,11 +191,21 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }
 
-    function getDepositorsInitialAssetByChainIndex(uint256 chainIndex_) external view returns (uint256 initialAsset_) {
+    function getInitialAssetByChainIndex(uint256 chainIndex_) external view returns (uint256 initialAsset_) {
         initialAsset_ = chains[chainIndex_].depositors.length * DEPOSITOR_INITIAL_ASSET;
     }
 
-    function getDepositorsCurrentAssetByChainIndex(uint256 chainIndex_) external view returns (uint256 currentAsset_) { }
+    function getDepositorsAssetByChainIndex(uint256 chainIndex_)
+        external
+        view
+        returns (uint256[] memory depositorAsset_)
+    {
+        uint256 numberOfDepositors_ = chains[chainIndex_].depositors.length;
+        depositorAsset_ = new uint256[](numberOfDepositors_);
+        for (uint256 i_ = 0; i_ < numberOfDepositors_; i_++) {
+            depositorAsset_[i_] = getLPTokenBalance(chains[chainIndex_].depositors[i_]);
+        }
+    }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Internal Vautlt Simulation Functions ----------------------------------------------------------------------------------------------//
@@ -210,6 +239,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     function _deployOnChains(uint256 seed_) internal {
+        numberOfDeployments++;
         vm.warp(time);
         uint256 numberOfChains_ = Lib.getRandomNumberInRange(MIN_VAULTS, MAX_VAULTS, seed_);
 
@@ -223,6 +253,10 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         connectVaults(chainIds_, vaultsv2_, endpoints_);
 
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
+            _invalidDepositorAdresses[vaultsv2_[i_]] = true;
+            _invalidDepositorAdresses[endpoints_[i_]] = true;
+            _invalidDepositorAdresses[rewardTokens_[i_]] = true;
+
             Chain_Lz memory newChain;
             newChain.vaultV2 = VaultV2(vaultsv2_[i_]);
             newChain.rewardToken = IERC20(rewardTokens_[i_]);
@@ -251,28 +285,27 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     }
 
     function _deployActors(uint256 seed_) internal {
-        uint256 numberOfActors_ = Lib.getRandomNumberInRange(1, MAX_DEPOSITORS_PER_VAULT, seed_);
+        uint256 numberOfActors_ = Lib.getRandomNumberInRange(MIN_DEPOSITORS_PER_VAULT, MAX_DEPOSITORS_PER_VAULT, seed_);
         for (uint256 j = 0; j < numberOfActors_; j++) {
             address depositor_ = address(uint160(seed_ % type(uint160).max));
-            if (depositor_ == address(0)) depositor_ = address(1);
+            if (_invalidDepositorAdresses[depositor_]) depositor_ = address(1);
             giveLPtokens(depositor_, DEPOSITOR_INITIAL_ASSET);
-            _currentChain.depositors.push(depositor_);
+            chains[_chainIndex].depositors.push(depositor_);
             seed_ = seed_ / 3;
         }
     }
 
-    function _getChain(uint256 seed_) internal view returns (Chain_Lz storage chain_) {
-        uint256 _currentChainId = seed_ % chains.length;
-        chain_ = chains[_currentChainId];
+    function _getChainIndex(uint256 seed_) internal view returns (uint256 chainIndex_) {
+        chainIndex_ = seed_ % chains.length;
     }
 
     function _getChain_random(uint256 seed_) internal view returns (Random_struct storage chain_) {
-        uint256 _currentChainId = seed_ % chains.length;
-        chain_ = chains_random[_currentChainId];
+        uint256 currentChainId_ = seed_ % chains.length;
+        chain_ = chains_random[currentChainId_];
     }
 
     function _getActor(uint256 seed_) internal view returns (address actor_) {
-        uint256 actorSize = _currentChain.depositors.length;
-        actor_ = _currentChain.depositors[seed_ % actorSize];
+        uint256 actorsSize_ = chains[_chainIndex].depositors.length;
+        actor_ = chains[_chainIndex].depositors[seed_ % actorsSize_];
     }
 }
