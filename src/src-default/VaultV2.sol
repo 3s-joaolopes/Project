@@ -9,9 +9,12 @@ import { IVault } from "./interfaces/IVault.sol";
 import { IVaultV2 } from "./interfaces/IVaultV2.sol";
 import { ILayerZeroReceiver } from "./interfaces/dependencies/ILayerZeroReceiver.sol";
 import { VaultV2Storage } from "./storage/VaultV2Storage.sol";
-//import { NonblockingLzApp } from "@layerZero/lzApp/NonblockingLzApp.sol";
 
 contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // Constants -------------------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
+
     uint128 constant REWARD_PRECISION = 1 ether;
     uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION; // 10^10 / 365.25 days (in seconds)
     uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
@@ -20,10 +23,18 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     uint64 constant SEND_VALUE = 1 ether;
     uint16 constant CHAIN_LIST_SEPARATOR = 998;
 
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // Modifiers -------------------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
+
     modifier onlyOwner() {
         if (msg.sender != _owner) revert UnauthorizedError();
         _;
     }
+
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // Proxy Initializer -----------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
 
     /// @dev Acts as the constructor
     function initialize(address asset_, address lzEndpoint_) external {
@@ -40,6 +51,10 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         _idCounter = 2;
         _lastRewardUpdateTime = uint64(block.timestamp);
     }
+
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // Base User Calls -------------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
 
     /// @inheritdoc IVault
     function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external override {
@@ -92,6 +107,10 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
 
         emit LogClaimRewards(msg.sender, amount_);
     }
+
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // LayerZero Calls  ------------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
 
     /// @inheritdoc ILayerZeroReceiver
     function lzReceive(uint16 srcChainId_, bytes memory srcAddress_, uint64, bytes calldata payload_)
@@ -167,6 +186,10 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         lzEndpoint = ILayerZeroEndpoint(lzEndpoint_);
         emit LogNewLzEndpoint(lzEndpoint_);
     }
+
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // View Functions  -------------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
 
     /// @inheritdoc IVault
     function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_) {
@@ -258,6 +281,10 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------------------------//
+    // Internal Functions ----------------------------------------------------------------------------------------------------------------//
+    //------------------------------------------------------------------------------------------------------------------------------------//
+
     function _broadcastDeposit(uint128 shares, uint64 expireTime) internal {
         bytes memory payload_ = abi.encodePacked(shares, uint64(block.timestamp), expireTime);
 
@@ -270,20 +297,6 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
                 chainId_, trustedRemote, payload_, payable(_owner), address(0x0), bytes("")
             );
             chainId_ = _chainIdList[chainId_];
-        }
-    }
-
-    function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_) {
-        rewardsPerShare_ =
-            _lastRewardsPerShare + (timestamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
-    }
-
-    function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_) {
-        if (
-            _depositList[hint_].expireTime <= expireTime_
-                && _depositList[_depositList[hint_].nextId].expireTime >= expireTime_
-        ) {
-            valid_ = true;
         }
     }
 
@@ -302,4 +315,18 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner { }
+
+    function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_) {
+        rewardsPerShare_ =
+            _lastRewardsPerShare + (timestamp_ - _lastRewardUpdateTime) * REWARDS_PER_SECOND / _totalShares;
+    }
+
+    function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_) {
+        if (
+            _depositList[hint_].expireTime <= expireTime_
+                && _depositList[_depositList[hint_].nextId].expireTime >= expireTime_
+        ) {
+            valid_ = true;
+        }
+    }
 }
