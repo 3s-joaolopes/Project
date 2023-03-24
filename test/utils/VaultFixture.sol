@@ -51,13 +51,17 @@ contract VaultFixture is Test {
     }
 
     function giveLPtokens(address receiver_, uint256 amount_) public isDeployer {
+        uint256 balanceBefore = LPtoken.balanceOf(receiver_);
         LPtoken.transfer(receiver_, amount_);
 
         //sanity check
         if (receiver_ != deployer) {
-            uint256 balance = LPtoken.balanceOf(receiver_);
-            assert(balance == amount_);
+            assert(LPtoken.balanceOf(receiver_) - balanceBefore == amount_);
         }
+    }
+
+    function getLPTokenBalance(address address_) public view returns (uint256 balance_) {
+        balance_ = LPtoken.balanceOf(address_);
     }
 
     function deposit(address vaultAddr_, address depositor_, uint128 deposit_, uint64 monthsLocked_) public {
