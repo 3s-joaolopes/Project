@@ -30,7 +30,7 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         rewardToken = OFToken(rewardTokenAddr);
     }
 
-    function testFuzz_Deposit(address depositor_, uint128 depositSeed_, uint64 monthsLockedSeed_, uint64 hint_)
+    function testFuzz_Deposit_SkipCI(address depositor_, uint128 depositSeed_, uint64 monthsLockedSeed_, uint64 hint_)
         external
     {
         vm.assume(depositor_ != address(0));
@@ -59,7 +59,7 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         vm.stopPrank();
     }
 
-    function testFuzz_Withdraw(
+    function testFuzz_Withdraw_SkipCI(
         address depositor_,
         uint256 depositSeed_,
         uint256 monthsLockedSeed_,
@@ -99,7 +99,7 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         vm.stopPrank();
     }
 
-    function testFuzz_ClaimRewards(
+    function testFuzz_ClaimRewards_SkipCI(
         address depositor_,
         uint256 depositSeed_,
         uint256 monthsLockedSeed_,

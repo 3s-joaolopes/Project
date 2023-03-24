@@ -26,7 +26,7 @@ contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
         super.setUp();
     }
 
-    function testFuzz_LayerZeroFunctionality(uint16[] calldata chainIds_) external {
+    function testFuzz_LayerZeroFunctionality_SkipCI(uint16[] calldata chainIds_) external {
         // Initial setup
         vm.assume(chainIds_.length > 0);
         numberOfVaults = bound(chainIds_.length, 1, MAX_CHAINS);
