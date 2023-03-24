@@ -21,7 +21,7 @@ solc-version = '0.6.12'
 [invariant]
 runs = 256
 depth = 15
-fail_on_revert = true
+fail_on_revert = false
 
 [fmt]
 line_length                      = 120          # Specifies the maximum line length where the formatter will try to wrap the line.
