@@ -33,9 +33,23 @@ library Lib {
     }
 
     /// @notice Check an array for repeated entries
-    /// @param  array_ array to check
+    /// @param  array_ array of uint256
     /// @return valid_ whether there are repeated entries or not
     function repeatedEntries(uint16[] calldata array_) public pure returns (bool valid_) {
+        uint256 size_ = array_.length;
+        for (uint256 i_ = 0; i_ < size_; i_++) {
+            for (uint256 j_ = 0; j_ < size_; j_++) {
+                if (i_ != j_) {
+                    if (array_[i_] == array_[j_]) valid_ = true;
+                }
+            }
+        }
+    }
+
+    /// @notice Check an array for repeated entries
+    /// @param  array_ array of addresses
+    /// @return valid_ whether there are repeated entries or not
+    function repeatedEntries(address[] calldata array_) public pure returns (bool valid_) {
         uint256 size_ = array_.length;
         for (uint256 i_ = 0; i_ < size_; i_++) {
             for (uint256 j_ = 0; j_ < size_; j_++) {
@@ -53,6 +67,32 @@ library Lib {
         uint256 size_ = array_.length;
         for (uint256 i_ = 0; i_ < size_; i_++) {
             sum_ += array_[i_];
+        }
+    }
+
+    /// @notice Add two vectors
+    /// @param  a_ first array
+    /// @param  b_ second array
+    /// @return sum_ sum of both vectors
+    function vectorSum(uint256[] calldata a_, uint256[] calldata b_) public pure returns (uint256[] memory sum_) {
+        assert(a_.length == b_.length);
+        uint256 size_ = a_.length;
+        sum_ = new uint256[](size_);
+        for (uint256 i_ = 0; i_ < size_; i_++) {
+            sum_[i_] = a_[i_] + b_[i_];
+        }
+    }
+
+    /// @notice Compares all the elements of two vectors
+    /// @param  a_ first array
+    /// @param  b_ second array
+    /// @return equal_ whether or not both vectors are the same
+    function vectorEquals(uint256[] calldata a_, uint256[] calldata b_) public pure returns (bool equal_) {
+        assert(a_.length == b_.length);
+        uint256 size_ = a_.length;
+        equal_ = true;
+        for (uint256 i_ = 0; i_ < size_; i_++) {
+            if(a_[i_] != b_[i_]) equal_ = false;
         }
     }
 }
