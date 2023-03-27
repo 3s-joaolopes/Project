@@ -84,7 +84,7 @@ contract VaultV2Invariants is Test {
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             assert(
                 handler.getVaultAssetBalanceByIndex(i_)
-                    == handler.getVaultExpectedDepositsByIndex(i_) - handler.getVaultExpectedWithdrawlsByIndex(i_)
+                    == handler.getVaultExpectedDepositsByIndex(i_) - handler.getExpectedWithdrawnAssetByChainIndex(i_)
             );
         }
     }
@@ -128,11 +128,11 @@ contract VaultV2Invariants is Test {
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             console2.log("Chain: ", i_ + 1, "/", handler.getNumberOfChains());
             console2.log("Vault asset", handler.getVaultAssetBalanceByIndex(i_));
-            console2.log("Withdrawn asset", handler.getWithdrawnAssetByChainIndex(i_));
+            console2.log("Withdrawn asset", handler.getExpectedWithdrawnAssetByChainIndex(i_));
 
             //vm.writeLine("test/invariant/out.txt", vm.toString(i_));
             //vm.writeLine("test/invariant/out.txt", vm.toString(handler.getVaultAssetBalanceByIndex(i_)));
-            ///vm.writeLine("test/invariant/out.txt", vm.toString(handler.getWithdrawnAssetByChainIndex(i_)));
+            ///vm.writeLine("test/invariant/out.txt", vm.toString(handler.getExpectedWithdrawnAssetByChainIndex(i_)));
         }
     }
 
