@@ -92,7 +92,7 @@ library Lib {
         uint256 size_ = a_.length;
         equal_ = true;
         for (uint256 i_ = 0; i_ < size_; i_++) {
-            if(a_[i_] != b_[i_]) equal_ = false;
+            if (a_[i_] != b_[i_]) equal_ = false;
         }
     }
 }

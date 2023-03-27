@@ -82,7 +82,10 @@ contract VaultV2Invariants is Test {
     function invariant_correctAsset_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
-            assert(handler.getVaultAssetBalanceByIndex(i_) == handler.getVaultExpectedDepositsByIndex(i_) - handler.getVaultExpectedWithdrawlsByIndex(i_));
+            assert(
+                handler.getVaultAssetBalanceByIndex(i_)
+                    == handler.getVaultExpectedDepositsByIndex(i_) - handler.getVaultExpectedWithdrawlsByIndex(i_)
+            );
         }
     }
 
@@ -118,7 +121,7 @@ contract VaultV2Invariants is Test {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     // Log results
-    function invariant_LogSummary_SkipCI() public view{
+    function invariant_LogSummary_SkipCI() public view {
         //vm.writeLine("test/invariant/out.txt", "Logs--------");
         uint256 numberOfChains_ = handler.getNumberOfChains();
         console2.log("Logs------------- chains:", numberOfChains_);
@@ -134,7 +137,7 @@ contract VaultV2Invariants is Test {
     }
 
     // Ask handler to log results
-    function invariant_HandlerLogSummary_SkipCI() public{
+    function invariant_HandlerLogSummary_SkipCI() public {
         handler.handlerLog();
     }
 }

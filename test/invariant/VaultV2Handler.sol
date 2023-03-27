@@ -35,7 +35,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         bool withdrawn;
     }
 
-    struct Withdrawl{
+    struct Withdrawl {
         uint256 chainIndex;
         uint256 claimedRewards;
         uint256 expectedRewards;
@@ -106,7 +106,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     // Targeted Functions ----------------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------------//
 
-    function deposit(uint256 seed_, uint64 hint_) external useTime() useChain(seed_) useActor(seed_) {
+    function deposit(uint256 seed_, uint64 hint_) external useTime useChain(seed_) useActor(seed_) {
         uint128 deposit_ = uint128(Lib.getRandomNumberInRange(MIN_DEPOSIT, MAX_DEPOSIT, seed_));
         uint64 monthsLocked_ = _lockPeriods[(seed_ % _lockPeriods.length)];
         LPtoken.approve(address(chains[_chainIndex].vaultV2), deposit_);
@@ -114,12 +114,12 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         _addDepositToList(_chainIndex, _currentActor, uint256(deposit_), uint256(monthsLocked_));
     }
 
-    function withdraw(uint256 seed_) external useTime() useChain(seed_) useActor(seed_) {
+    function withdraw(uint256 seed_) external useTime useChain(seed_) useActor(seed_) {
         chains[_chainIndex].vaultV2.withdraw();
         _setDepositAsWithdrawn(_chainIndex, _currentActor);
     }
 
-    function claimRewards(uint256 seed_) external useTime() useChain(seed_) useActor(seed_) {
+    function claimRewards(uint256 seed_) external useTime useChain(seed_) useActor(seed_) {
         uint64[] memory depositIds_ = chains[_chainIndex].vaultV2.getDepositIds(_currentActor);
         chains[_chainIndex].vaultV2.claimRewards(depositIds_);
         _addRewardsClaimedToList(_chainIndex, _currentActor, 0);
@@ -178,22 +178,14 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }*/
 
-    function getVaultExpectedDepositsByIndex(uint256 chainIndex_)
-        external
-        view
-        returns (uint256 depositedAsset_)
-    {
+    function getVaultExpectedDepositsByIndex(uint256 chainIndex_) external view returns (uint256 depositedAsset_) {
         uint256 numberOfDeposits_ = ghost_deposits[chainIndex_].length;
         for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
             depositedAsset_ += ghost_deposits[chainIndex_][i_].deposit;
         }
     }
 
-    function getVaultExpectedWithdrawlsByIndex(uint256 chainIndex_)
-        external
-        view
-        returns (uint256 withdrawnAsset_)
-    {
+    function getVaultExpectedWithdrawlsByIndex(uint256 chainIndex_) external view returns (uint256 withdrawnAsset_) {
         uint256 numberOfDeposits_ = ghost_deposits[chainIndex_].length;
         for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
             if (ghost_deposits[chainIndex_][i_].withdrawn == true) {
@@ -230,11 +222,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }
 
-    function getActorsAssetByChainIndex(uint256 chainIndex_)
-        external
-        view
-        returns (uint256[] memory actorAsset_)
-    {
+    function getActorsAssetByChainIndex(uint256 chainIndex_) external view returns (uint256[] memory actorAsset_) {
         uint256 numberOfActors_ = chains[chainIndex_].actors.length;
         actorAsset_ = new uint256[](numberOfActors_);
         for (uint256 i_ = 0; i_ < numberOfActors_; i_++) {
@@ -253,18 +241,15 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         for (uint256 i_ = 0; i_ < numberOfActors_; i_++) {
             for (uint256 j_ = 0; j_ < numberOfDeposits_; j_++) {
                 if (ghost_deposits[chainIndex_][j_].depositor == chains[chainIndex_].actors[i_]) {
-                    if(ghost_deposits[chainIndex_][j_].withdrawn == false)
+                    if (ghost_deposits[chainIndex_][j_].withdrawn == false) {
                         actorDeposits_[i_] += ghost_deposits[chainIndex_][j_].deposit;
+                    }
                 }
             }
         }
     }
 
-    function getActorsRewardsByChainIndex(uint256 chainIndex_)
-        external
-        view
-        returns (uint256[] memory actorRewards_)
-    {
+    function getActorsRewardsByChainIndex(uint256 chainIndex_) external view returns (uint256[] memory actorRewards_) {
         uint256 numberOfActors_ = chains[chainIndex_].actors.length;
         actorRewards_ = new uint256[](numberOfActors_);
         for (uint256 i_ = 0; i_ < numberOfActors_; i_++) {
@@ -316,8 +301,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         ghost_withdrawls[depositor_].push(newWithdrawl);
     }
 
-    function _getExpectedRewards(address depositor_) internal returns (uint256 expectedRewards_){
-    }
+    function _getExpectedRewards(address depositor_) internal returns (uint256 expectedRewards_) { }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Internal Handler Operation Functions ----------------------------------------------------------------------------------------------//
