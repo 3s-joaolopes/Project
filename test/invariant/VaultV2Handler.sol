@@ -16,16 +16,20 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     uint256 constant MIN_VAULTS = 2;
     uint256 constant REWARD_PRECISION = 1 ether;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint256 constant REWARDS_SECOND = REWARD_PRECISION * REWARDS_PER_SECOND;
     uint256 constant MAX_VAULTS = 4;
     uint256 constant MIN_ACTORS_PER_VAULT = 1;
     uint256 constant MAX_ACTORS_PER_VAULT = 3;
     uint256 constant ACTOR_INITIAL_ASSET = 1_000_000 ether;
+    uint128 constant MIN_DEPOSIT = 1000;
     uint128 constant MAX_DEPOSIT = 10 ether;
     uint128 constant MIN_TIME_INTERVAL = 7 days;
     uint128 constant MAX_TIME_INTERVAL = 12 * SECONDS_IN_30_DAYS;
     uint256 constant SHARES_STORAGE_SLOT = 101;
     uint256 constant LAST_TIME_STORAGE_SLOT = 102;
+    uint256 constant STARTING_TIME = 1000;
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Structs ---------------------------------------------------------------------------------------------------------------------------//
@@ -59,6 +63,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     uint256 public numberOfDeployments;
 
     address private _currentActor;
+    uint256 private _time = STARTING_TIME;
     uint256 private _chainIndex;
     uint256 private _lastHistoryIndex;
     uint64[4] private _lockPeriods = [6, 12, 24, 48];
@@ -77,7 +82,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     modifier useTime() {
-        vm.warp(time);
+        vm.warp(_time);
         _;
     }
 
@@ -133,7 +138,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     function skipTime(uint256 seed_) external {
         uint256 timeInterval = Lib.getRandomNumberInRange(MIN_TIME_INTERVAL, MAX_TIME_INTERVAL, seed_);
-        vm.warp(time += timeInterval);
+        vm.warp(_time += timeInterval);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -197,7 +202,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     }
 
     function getMaximumRewardsPossible() public view returns (uint256 maxRewards_) {
-        maxRewards_ = (time - STARTING_TIME) * REWARDS_PER_SECOND;
+        maxRewards_ = (_time - STARTING_TIME) * REWARDS_PER_SECOND;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -275,14 +280,14 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         internal
     {
         // Create deposit
-        uint256 expireTime_ = time + monthsLocked_ * SECONDS_IN_30_DAYS;
+        uint256 expireTime_ = _time + monthsLocked_ * SECONDS_IN_30_DAYS;
         uint256 shares_ = deposit_ * (monthsLocked_ / 6);
         Deposit memory newDeposit_ = Deposit({
             chainIndex: chainIndex_,
             depositor: depositor_,
             deposit: deposit_,
             shares: shares_,
-            depositTime: time,
+            depositTime: _time,
             expireTime: expireTime_,
             withdrawn: false
         });
@@ -308,7 +313,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         if (_shareHistory.length > 0) {
             latestShares_ = _shareHistory[_shareHistory.length - 1].shares;
         }
-        _shareHistory.push(HistoryElement(time, latestShares_ + shares_));
+        _shareHistory.push(HistoryElement(_time, latestShares_ + shares_));
     }
 
     function _setDepositAsWithdrawn(uint256 chainIndex_, address depositor_) internal {
@@ -316,7 +321,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
             if (_ghost_deposits[i_].chainIndex == chainIndex_) {
                 if (_ghost_deposits[i_].depositor == depositor_) {
-                    if (time > _ghost_deposits[i_].expireTime) {
+                    if (_time > _ghost_deposits[i_].expireTime) {
                         _ghost_deposits[i_].withdrawn = true;
                     }
                 }
@@ -335,7 +340,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         if (_shareHistory.length == 0) return;
         uint256 numberOfDeposits_ = _ghost_deposits.length;
         for (uint256 i_ = _lastHistoryIndex; i_ < numberOfDeposits_; i_++) {
-            if (_ghost_deposits[i_].expireTime <= time) {
+            if (_ghost_deposits[i_].expireTime <= _time) {
                 uint256 latestShares_ = _shareHistory[_shareHistory.length - 1].shares;
                 _shareHistory.push(
                     HistoryElement(_ghost_deposits[i_].expireTime, latestShares_ - _ghost_deposits[i_].shares)
@@ -368,7 +373,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
                     }
                 }
                 if (_shareHistory[historySize_ - 1].time < expireTime_) {
-                    uint256 timeInterval_ = time - _shareHistory[historySize_ - 1].time;
+                    uint256 timeInterval_ = _time - _shareHistory[historySize_ - 1].time;
                     uint256 rewardIncrement =
                         timeInterval_ * REWARDS_SECOND * shares_ / _shareHistory[historySize_ - 1].shares;
                     expectedRewards_ += rewardIncrement;
