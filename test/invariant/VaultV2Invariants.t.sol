@@ -50,7 +50,7 @@ contract VaultV2Invariants is Test {
 
     // Assert that all the vaults (on all the chains) have the same number of shares
     // This isn't always guaranteed to be true, since "withdraw()" and "claimRewards()"
-    // only maintain the deposit list in the source chain
+    //      only maintain the deposit list in the source chain
     function conditional_invariant_VaultsInSync_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         uint256 firstVaultshares_;
@@ -147,15 +147,24 @@ contract VaultV2Invariants is Test {
     }
 
     // Write results to out.txt file
-    function invariant_WriteSummary_SkipCI() public {
+    function _invariant_WriteSummary_SkipCI() public {
         vm.writeLine("test/invariant/out.txt", "Logs--------");
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             uint256[] memory actorRewards_ = handler.getActorsRewardsByChainIndex(i_);
             vm.writeLine("test/invariant/out.txt", string(abi.encodePacked("Chain: ", vm.toString(i_))));
-            vm.writeLine("test/invariant/out.txt", vm.toString(handler.getVaultAssetBalanceByIndex(i_)));
-            vm.writeLine("test/invariant/out.txt", vm.toString(handler.getExpectedWithdrawnAssetByChainIndex(i_)));
-            vm.writeLine("test/invariant/out.txt", vm.toString(Lib.sumOfElements(actorRewards_)));
+            vm.writeLine(
+                "test/invariant/out.txt",
+                string(abi.encodePacked("Asset: ", vm.toString(handler.getVaultAssetBalanceByIndex(i_))))
+            );
+            vm.writeLine(
+                "test/invariant/out.txt",
+                string(abi.encodePacked("Withdrawn: ", vm.toString(handler.getExpectedWithdrawnAssetByChainIndex(i_))))
+            );
+            vm.writeLine(
+                "test/invariant/out.txt",
+                string(abi.encodePacked("Claimed: ", vm.toString(Lib.sumOfElements(actorRewards_))))
+            );
         }
     }
 }
