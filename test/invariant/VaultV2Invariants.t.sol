@@ -90,6 +90,15 @@ contract VaultV2Invariants is Test {
     }
 
     // Assert that the issuance limit on reward tokens hasn't been crossed
+    function invariant_rewardLimit_SkipCI() public view {
+        uint256 numberOfChains_ = handler.getNumberOfChains();
+        uint256 totalRewards_ = 0;
+        for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
+            uint256[] memory actorRewards_ = handler.getActorsRewardsByChainIndex(i_);
+            totalRewards_ += Lib.sumOfElements(actorRewards_);
+        }
+        assert(totalRewards_ <= handler.getMaximumRewardsPossible());
+    }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Actor-wise Invariants -------------------------------------------------------------------------------------------------------------//
@@ -110,10 +119,9 @@ contract VaultV2Invariants is Test {
     function invariant_correctRewards_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
-            uint256[] memory initialAsset_ = handler.getActorsInitialAssetByChainIndex(i_);
-            uint256[] memory asset_ = handler.getActorsAssetByChainIndex(i_);
-            uint256[] memory unwithdrawnAsset_ = handler.getActorsUnwithdrawnAssetByChainIndex(i_);
-            assert(Lib.vectorEquals(initialAsset_, Lib.vectorSum(asset_, unwithdrawnAsset_)));
+            uint256[] memory actorRewards_ = handler.getActorsRewardsByChainIndex(i_);
+            uint256[] memory actorExpectedRewards_ = handler.getActorsExpectedRewardsByChainIndex(i_);
+            assert(Lib.vectorSimilar(actorRewards_, actorExpectedRewards_, 10));
         }
     }
     //------------------------------------------------------------------------------------------------------------------------------------//
