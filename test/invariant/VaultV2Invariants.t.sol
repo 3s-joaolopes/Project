@@ -49,7 +49,9 @@ contract VaultV2Invariants is Test {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     // Assert that all the vaults (on all the chains) have the same number of shares
-    function invariant_VaultsInSync_SkipCI() public view {
+    // This isn't always guaranteed to be true, since "withdraw()" and "claimRewards()"
+    // only maintain the deposit list in the source chain
+    function conditional_invariant_VaultsInSync_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         uint256 firstVaultshares_;
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
@@ -59,10 +61,12 @@ contract VaultV2Invariants is Test {
         }
     }
 
+    // This isn't always guaranteed to be true, for the same reasons as in the previous function
     // Assert that the number of shares in the first vault matches the expected shares
     function invariant_correctShares_SkipCI() public view {
-        if (handler.getNumberOfChains() > 0) {
-            assert(handler.getVaultExpectedShares() == handler.getVaultSharesByIndex(0));
+        uint256 numberOfChains_ = handler.getNumberOfChains();
+        for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
+            assert(handler.getVaultExpectedSharesByIndex(i_) == handler.getVaultSharesByIndex(i_));
         }
     }
 
@@ -124,28 +128,34 @@ contract VaultV2Invariants is Test {
             assert(Lib.vectorSimilar(actorRewards_, actorExpectedRewards_, 10));
         }
     }
+
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Logs ------------------------------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------------//
 
-    // Log results
-    function invariant_LogSummary_SkipCI() public view {
-        //vm.writeLine("test/invariant/out.txt", "Logs--------");
+    // Log results to console
+    function invariant_LogSummary_SkipCI() public {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         console2.log("Logs------------- chains:", numberOfChains_);
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
+            uint256[] memory actorRewards_ = handler.getActorsRewardsByChainIndex(i_);
             console2.log("Chain: ", i_ + 1, "/", handler.getNumberOfChains());
             console2.log("Vault asset", handler.getVaultAssetBalanceByIndex(i_));
             console2.log("Withdrawn asset", handler.getExpectedWithdrawnAssetByChainIndex(i_));
-
-            //vm.writeLine("test/invariant/out.txt", vm.toString(i_));
-            //vm.writeLine("test/invariant/out.txt", vm.toString(handler.getVaultAssetBalanceByIndex(i_)));
-            ///vm.writeLine("test/invariant/out.txt", vm.toString(handler.getExpectedWithdrawnAssetByChainIndex(i_)));
+            console2.log("Claimed rewards", Lib.sumOfElements(actorRewards_));
         }
     }
 
-    // Ask handler to log results
-    function invariant_HandlerLogSummary_SkipCI() public {
-        handler.handlerLog();
+    // Write results to out.txt file
+    function invariant_WriteSummary_SkipCI() public {
+        vm.writeLine("test/invariant/out.txt", "Logs--------");
+        uint256 numberOfChains_ = handler.getNumberOfChains();
+        for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
+            uint256[] memory actorRewards_ = handler.getActorsRewardsByChainIndex(i_);
+            vm.writeLine("test/invariant/out.txt", string(abi.encodePacked("Chain: ", vm.toString(i_))));
+            vm.writeLine("test/invariant/out.txt", vm.toString(handler.getVaultAssetBalanceByIndex(i_)));
+            vm.writeLine("test/invariant/out.txt", vm.toString(handler.getExpectedWithdrawnAssetByChainIndex(i_)));
+            vm.writeLine("test/invariant/out.txt", vm.toString(Lib.sumOfElements(actorRewards_)));
+        }
     }
 }

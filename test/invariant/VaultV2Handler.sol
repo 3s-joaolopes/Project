@@ -15,13 +15,17 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     uint256 constant MIN_VAULTS = 2;
+    uint256 constant REWARD_PRECISION = 1 ether;
+    uint256 constant REWARDS_SECOND = REWARD_PRECISION * REWARDS_PER_SECOND;
     uint256 constant MAX_VAULTS = 4;
     uint256 constant MIN_ACTORS_PER_VAULT = 1;
     uint256 constant MAX_ACTORS_PER_VAULT = 3;
     uint256 constant ACTOR_INITIAL_ASSET = 1_000_000 ether;
     uint128 constant MAX_DEPOSIT = 10 ether;
+    uint128 constant MIN_TIME_INTERVAL = 7 days;
     uint128 constant MAX_TIME_INTERVAL = 12 * SECONDS_IN_30_DAYS;
     uint256 constant SHARES_STORAGE_SLOT = 101;
+    uint256 constant LAST_TIME_STORAGE_SLOT = 102;
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Structs ---------------------------------------------------------------------------------------------------------------------------//
@@ -57,7 +61,6 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     address private _currentActor;
     uint256 private _chainIndex;
     uint256 private _lastHistoryIndex;
-    uint256 _lastRewardsTime;
     uint64[4] private _lockPeriods = [6, 12, 24, 48];
 
     Chain_Lz[] private _chains;
@@ -65,6 +68,8 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     Deposit[] private _ghost_deposits;
 
     mapping(address => bool) private _invalidActorAdresses;
+
+    // Mapping: chain index -> depositor -> ExpectedRewards * REWARD_PRECISION
     mapping(uint256 => mapping(address => uint256)) private _ghost_expectedRewards;
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -72,7 +77,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     modifier useTime() {
-        //vm.warp(time);
+        vm.warp(time);
         _;
     }
 
@@ -83,6 +88,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     }
 
     modifier useActor(uint256 actorSeed_) {
+        vm.stopPrank();
         if (_chains[_chainIndex].actors.length == 0) _deployActors(actorSeed_);
         _currentActor = _getActor(actorSeed_);
         vm.startPrank(_currentActor);
@@ -96,15 +102,10 @@ contract VaultV2Handler is Test, LayerZeroHelper {
 
     constructor() {
         super.setUp();
+        _invalidActorAdresses[deployer] = true;
         _invalidActorAdresses[address(LPtoken)] = true;
         _invalidActorAdresses[address(this)] = true;
         _invalidActorAdresses[address(0)] = true;
-    }
-
-    function handlerLog() external view {
-        console2.log("Logs-------------");
-        uint256 numberOfChains_ = _chains.length;
-        console2.log("Chains: ", numberOfChains_);
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -131,7 +132,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     }
 
     function skipTime(uint256 seed_) external {
-        uint256 timeInterval = Lib.getRandomNumberInRange(0, MAX_TIME_INTERVAL, seed_);
+        uint256 timeInterval = Lib.getRandomNumberInRange(MIN_TIME_INTERVAL, MAX_TIME_INTERVAL, seed_);
         vm.warp(time += timeInterval);
     }
 
@@ -139,35 +140,39 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     // Vault-wise View Functions ---------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------------//
 
-    function getNumberOfChains() external view returns (uint256 numberOfChains_) {
+    function getNumberOfChains() public view returns (uint256 numberOfChains_) {
         numberOfChains_ = _chains.length;
     }
 
-    function getNumberOfActorsOnChain(uint256 chainIndex_) external view returns (uint256 numberOfActors_) {
+    function getNumberOfActorsOnChain(uint256 chainIndex_) public view returns (uint256 numberOfActors_) {
         numberOfActors_ = _chains[chainIndex_].actors.length;
     }
 
-    function getVaultSharesByIndex(uint256 chainIndex_) external view returns (uint256 totalShares_) {
+    function getVaultSharesByIndex(uint256 chainIndex_) public view returns (uint256 totalShares_) {
         address vaultAddr = address(_chains[chainIndex_].vaultV2);
         uint256 slotData_ = uint256(vm.load(vaultAddr, bytes32(uint256(SHARES_STORAGE_SLOT))));
         totalShares_ = slotData_ & 0xffffffffffffffffffffffffffffffff;
     }
 
-    function getVaultExpectedShares() external view returns (uint256 totalShares_) {
-        uint256 numberOfDeposits_ = _ghost_deposits.length;
-        for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
-            if (_ghost_deposits[i_].withdrawn == false) {
+    function getVaultExpectedSharesByIndex(uint256 chainIndex_) public view returns (uint256 totalShares_) {
+        address vaultAddr = address(_chains[chainIndex_].vaultV2);
+        uint256 slotData_ = uint256(vm.load(vaultAddr, bytes32(uint256(LAST_TIME_STORAGE_SLOT))));
+        uint256 lastUpdateTime_ = slotData_ & 0xffffffffffffffff;
+
+        for (uint256 i_ = 0; i_ < _ghost_deposits.length; i_++) {
+            if (_ghost_deposits[i_].depositTime <= lastUpdateTime_ && lastUpdateTime_ < _ghost_deposits[i_].expireTime)
+            {
                 totalShares_ += _ghost_deposits[i_].shares;
             }
         }
     }
 
-    function getVaultAssetBalanceByIndex(uint256 chainIndex_) external view returns (uint256 assetBalance_) {
+    function getVaultAssetBalanceByIndex(uint256 chainIndex_) public view returns (uint256 assetBalance_) {
         address vaultAddr = address(_chains[chainIndex_].vaultV2);
         assetBalance_ = getLPTokenBalance(vaultAddr);
     }
 
-    function getVaultExpectedDepositsByIndex(uint256 chainIndex_) external view returns (uint256 depositedAsset_) {
+    function getVaultExpectedDepositsByIndex(uint256 chainIndex_) public view returns (uint256 depositedAsset_) {
         uint256 numberOfDeposits_ = _ghost_deposits.length;
         for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
             if (_ghost_deposits[i_].chainIndex == chainIndex_) {
@@ -176,11 +181,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }
 
-    function getExpectedWithdrawnAssetByChainIndex(uint256 chainIndex_)
-        external
-        view
-        returns (uint256 withdrawnAsset_)
-    {
+    function getExpectedWithdrawnAssetByChainIndex(uint256 chainIndex_) public view returns (uint256 withdrawnAsset_) {
         uint256 numberOfDeposits_ = _ghost_deposits.length;
         for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
             if (_ghost_deposits[i_].chainIndex == chainIndex_) {
@@ -191,17 +192,18 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         }
     }
 
-    function getInitialAssetByChainIndex(uint256 chainIndex_) external view returns (uint256 initialAsset_) {
+    function getInitialAssetByChainIndex(uint256 chainIndex_) public view returns (uint256 initialAsset_) {
         initialAsset_ = _chains[chainIndex_].actors.length * ACTOR_INITIAL_ASSET;
     }
 
-    function getMaximumRewardsPossible() external view returns (uint256 maxRewards_) {
+    function getMaximumRewardsPossible() public view returns (uint256 maxRewards_) {
         maxRewards_ = (time - STARTING_TIME) * REWARDS_PER_SECOND;
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
     // Actor-wise View Functions ---------------------------------------------------------------------------------------------------------//
     //------------------------------------------------------------------------------------------------------------------------------------//
+
     function getActorsInitialAssetByChainIndex(uint256 chainIndex_)
         external
         view
@@ -261,7 +263,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         actorExpectedRewards_ = new uint256[](numberOfActors_);
         for (uint256 i_ = 0; i_ < numberOfActors_; i_++) {
             address actor_ = _chains[chainIndex_].actors[i_];
-            actorExpectedRewards_[i_] = _ghost_expectedRewards[chainIndex_][actor_];
+            actorExpectedRewards_[i_] = _ghost_expectedRewards[chainIndex_][actor_] / REWARD_PRECISION;
         }
     }
 
@@ -325,6 +327,7 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     function _addRewardsClaimedToList(uint256 chainIndex_, address depositor_) internal {
         _updateShareHistory();
         _ghost_expectedRewards[chainIndex_][depositor_] = _getExpectedRewards(depositor_);
+        //console2.log("Expected rewards:", _ghost_expectedRewards[chainIndex_][depositor_]);
     }
 
     /// @dev Extremely gas ineficient. Just an alternative to the optimized logic used in the vault
@@ -353,17 +356,23 @@ contract VaultV2Handler is Test, LayerZeroHelper {
                 uint256 expireTime_ = _ghost_deposits[i_].expireTime;
                 uint256 shares_ = _ghost_deposits[i_].shares;
                 uint256 historySize_ = _shareHistory.length;
-                for (uint256 j_ = 1; j_ < historySize_; j_++) {
-                    if (depositTime_ <= _shareHistory[j_ - 1].time && _shareHistory[j_].time <= expireTime_) {
-                        uint256 timeInterval_ = _shareHistory[j_].time - _shareHistory[j_ - 1].time;
-                        expectedRewards_ +=
-                            (timeInterval_ * REWARDS_PER_SECOND / _shareHistory[j_ - 1].shares) * shares_;
+                if (historySize_ > 1) {
+                    for (uint256 j_ = 1; j_ < historySize_; j_++) {
+                        if (depositTime_ <= _shareHistory[j_ - 1].time && _shareHistory[j_].time <= expireTime_) {
+                            uint256 timeInterval_ = _shareHistory[j_].time - _shareHistory[j_ - 1].time;
+                            uint256 rewardIncrement =
+                                timeInterval_ * REWARDS_SECOND * shares_ / _shareHistory[j_ - 1].shares;
+                            expectedRewards_ += rewardIncrement;
+                            //console2.log("Reward Increment: ", rewardIncrement);
+                        }
                     }
                 }
                 if (_shareHistory[historySize_ - 1].time < expireTime_) {
-                    uint256 timeInterval_ = expireTime_ - _shareHistory[historySize_ - 1].time;
-                    expectedRewards_ +=
-                        (timeInterval_ * REWARDS_PER_SECOND / _shareHistory[historySize_ - 1].shares) * shares_;
+                    uint256 timeInterval_ = time - _shareHistory[historySize_ - 1].time;
+                    uint256 rewardIncrement =
+                        timeInterval_ * REWARDS_SECOND * shares_ / _shareHistory[historySize_ - 1].shares;
+                    expectedRewards_ += rewardIncrement;
+                    //console2.log(" Increment: ", rewardIncrement);
                 }
             }
         }
@@ -374,8 +383,8 @@ contract VaultV2Handler is Test, LayerZeroHelper {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     function _deployOnChains(uint256 seed_) internal {
+        vm.stopPrank();
         numberOfDeployments++;
-        vm.warp(time);
         uint256 numberOfChains_ = Lib.getRandomNumberInRange(MIN_VAULTS, MAX_VAULTS, seed_);
 
         uint16[] memory chainIds_ = new uint16[](numberOfChains_);
@@ -420,51 +429,3 @@ contract VaultV2Handler is Test, LayerZeroHelper {
         actor_ = _chains[_chainIndex].actors[seed_ % actorsSize_];
     }
 }
-
-/*
-    /// @dev Extremely gas ineficient. Just an alternative to the optimized logic used in the vault
-    function _updateShareHistory(){
-        uint256 numberOfDeposits_ = _ghost_deposits.length;
-        bool changes_ = true;
-        while(changes_ == true){
-            uint256 listSize_ = shareHistory.length;
-            uint256 lastUpdateTime_ = shareHistory[listSize_-1].time;
-            uint256 timeAux_ = type(uint256).max;
-            uint256 sharesAux_ = 0;
-            changes = false;
-            for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
-                if(_ghost_deposits[i_].expiretime > lastUpdateTime_ && _ghost_deposits[i_].expiretime <= time){
-                    changes_ = true;
-                    if(_ghost_deposits[i_].expiretime < timeAux_){
-                        timeAux_ = _ghost_deposits[i_].expiretime;
-                        sharesAux_ = _ghost_deposits[i_].shares;
-                    }
-                }
-            }
-            uint256 latestShares_ = shareHistory[shareHistory.length-1].shares;
-            shareHistory.push(HistoryElement(timeAux_, latestShares_ - sharesAux_));
-        }
-    }
-
-    /// @dev Extremely gas ineficient. Just an alternative to the optimized logic used in the vault
-    function _getExpectedRewards(address depositor_) internal returns (uint256 expectedRewards_) {
-        uint256 numberOfDeposits_ = _ghost_deposits.length;
-        for (uint256 i_ = 0; i_ < numberOfDeposits_; i_++) {
-            if(_ghost_deposits[i_].depositor == depositor_){
-                uint256 depositTime_ = _ghost_deposits[i_].depositTime;
-                uint256 expireTime_ = _ghost_deposits[i_].expireTime;
-                uint256 shares_ = _ghost_deposits[i_].shares;
-                uint256 historySize_ = shareHistory.length;
-                for (uint256 j_ = 0; j_ < historySize_; j_++) {
-                    if(depositTime_ < shareHistory[j_].time && shareHistory[j_].time <= expireTime_){
-                        int256 timeInterval_ = shareHistory[j_].time - shareHistory[j_-1].time ;
-                        expectedRewards_+= (timeInterval_ * REWARDS_PER_SECOND / shareHistory[j_-1].shares) * shares_;
-                    }
-                }
-                if(shareHistory[historySize_-1].time < expireTime_){
-                    int256 timeInterval_ = expireTime_ - shareHistory[historySize_-1].time ;
-                    expectedRewards_+= (timeInterval_ * REWARDS_PER_SECOND / shareHistory[historySize_-1].shares) * shares_;
-                }
-            }
-        }
-     }*/
