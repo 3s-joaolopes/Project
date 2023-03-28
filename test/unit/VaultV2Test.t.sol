@@ -149,7 +149,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         totalShares_chain2 = totalShares_chain2 & 0xffffffffffffffffffffffffffffffff;
         console2.log("Number of shares in both chains:", totalShares_chain1, "<->", totalShares_chain2);
         uint128 expectedValue = uint128(ALICE_INITIAL_LP_BALANCE + BOB_INITIAL_LP_BALANCE * 2);
-        assert(totalShares_chain2 == totalShares_chain2 && totalShares_chain2 == expectedValue);
+        assert(totalShares_chain1 == totalShares_chain2 && totalShares_chain2 == expectedValue);
 
         // Fast-forward 5 months
         vm.warp(time += 5 * SECONDS_IN_30_DAYS);
