@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
-import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { UniswapHelper } from "./../utils/UniswapHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
 import { Vault } from "src/src-default/Vault.sol";
@@ -11,7 +11,7 @@ import { VaultV2 } from "src/src-default/VaultV2.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 
-contract LayerZeroHelper is Test, VaultFixture {
+contract LayerZeroHelper is Test, UniswapHelper {
     function setUp() public virtual override {
         super.setUp();
     }

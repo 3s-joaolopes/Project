@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
-import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { UniswapHelper } from "./../utils/UniswapHelper.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
@@ -14,14 +14,21 @@ import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 import { Lib } from "test/utils/Library.sol";
 
 contract MultiChainOperationsFuzzTests is Test, LayerZeroHelper {
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint128 constant MIN_DEPOSIT = 1000;
+    uint256 constant STARTING_TIME = 1000;
     uint256 constant MIN_CHAINS = 1;
     uint256 constant MAX_CHAINS = 7;
     uint128 constant DEPOSIT = 1 ether;
     address constant DEPOSITOR = address(3);
     uint64 constant MONTHS_LOCKED = 12;
     uint64 constant RANDOM_HINT = 3;
+
     uint256 numberOfVaults;
     uint256 expectedRewards;
+    uint256 public time = STARTING_TIME;
 
     function setUp() public override {
         super.setUp();

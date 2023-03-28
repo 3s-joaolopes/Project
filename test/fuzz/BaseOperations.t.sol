@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { Test } from "@forge-std/Test.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
-import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { UniswapHelper } from "./../utils/UniswapHelper.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
@@ -16,6 +16,13 @@ import { Lib } from "test/utils/Library.sol";
 contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
     uint16 constant CHAIN_ID = 1;
     address constant OTHER_USER = address(1);
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint128 constant MIN_DEPOSIT = 1000;
+    uint256 constant STARTING_TIME = 1000;
+
+    uint256 public time = STARTING_TIME;
 
     VaultV2 public vaultv2;
     LZEndpointMock public endpoint;
@@ -76,12 +83,12 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         giveLPtokens(OTHER_USER, uint256(deposit_));
 
         vm.warp(time);
-        deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
+        _deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
 
         // Fast-forward
         vm.warp(time += timeToWithdraw_);
         // Someone else deposits tokens updating the list
-        deposit(address(vaultv2), OTHER_USER, 1000, 6);
+        _deposit(address(vaultv2), OTHER_USER, 1000, 6);
 
         // Withdraw
         vm.startPrank(depositor_);
@@ -116,12 +123,12 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         giveLPtokens(OTHER_USER, uint256(deposit_));
 
         vm.warp(time);
-        deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
+        _deposit(address(vaultv2), depositor_, deposit_, monthsLocked_);
 
         // Fast-forward
         vm.warp(time += timeInterval_);
         // Someone else deposits tokens updating the list
-        deposit(address(vaultv2), OTHER_USER, 1000, 6);
+        _deposit(address(vaultv2), OTHER_USER, 1000, 6);
 
         // Claim Rewards
         vm.startPrank(depositor_);
@@ -142,6 +149,17 @@ contract BaseOperationsFuzzTests is Test, LayerZeroHelper {
         assert(Lib.similar(uint256(claimableRewards), uint256(expectedRewards)));
         assert(Lib.similar(rewardToken.balanceOf(depositor_), uint256(expectedRewards)));
 
+        vm.stopPrank();
+    }
+
+    function _deposit(address vaultAddr_, address depositor_, uint128 deposit_, uint64 monthsLocked_) private {
+        vm.startPrank(depositor_);
+        uint256 startingBalance = LPtoken.balanceOf(depositor_);
+        uint64 hint_ =
+            IVault(vaultAddr_).getInsertPosition(uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS);
+        LPtoken.approve(vaultAddr_, deposit_);
+        IVault(vaultAddr_).deposit(deposit_, monthsLocked_, hint_);
+        assert(LPtoken.balanceOf(depositor_) == startingBalance - deposit_);
         vm.stopPrank();
     }
 }

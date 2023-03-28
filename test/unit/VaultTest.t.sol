@@ -1,25 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@forge-std/Test.sol"; // to get console.log
-
 import { Test } from "@forge-std/Test.sol";
 import { console2 } from "@forge-std/console2.sol";
-import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { UniswapHelper } from "./../utils/UniswapHelper.sol";
 import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { OFToken } from "src/src-default/OFToken.sol";
 import { Lib } from "test/utils/Library.sol";
 
-contract VaultTest is Test, VaultFixture {
+contract VaultTest is Test, UniswapHelper {
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint128 constant MIN_DEPOSIT = 1000;
+    uint256 constant STARTING_TIME = 1000;
+
+    uint256 public time = STARTING_TIME;
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
     uint256 public constant BOB_INITIAL_LP_BALANCE = 2 ether;
+
+    address public alice = vm.addr(1500);
+    address public bob = vm.addr(1501);
 
     OFToken public rewardToken;
     Vault public vault;
 
     function setUp() public override {
         super.setUp();
+
+        vm.label(alice, "Alice");
+        vm.label(bob, "Bob");
 
         giveLPtokens(alice, ALICE_INITIAL_LP_BALANCE);
         giveLPtokens(bob, BOB_INITIAL_LP_BALANCE);
@@ -200,7 +211,6 @@ contract VaultTest is Test, VaultFixture {
         vm.startPrank(alice);
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
-        console2.log("Month 3. Alice rewards:", rewardToken.balanceOf(alice), "->", REWARDS_PER_MONTH * 3);
         assert(Lib.similar(rewardToken.balanceOf(alice), uint256(REWARDS_PER_MONTH * 3)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
@@ -215,7 +225,6 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(alice);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        console2.log("Month 8. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
         assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         vm.stopPrank();
 
@@ -224,7 +233,6 @@ contract VaultTest is Test, VaultFixture {
         depositIds = vault.getDepositIds(bob);
         vault.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
-        console2.log("Month 8. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
         assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vault.withdraw();
@@ -249,15 +257,10 @@ contract VaultTest is Test, VaultFixture {
 
         // Print reward token balances
         expectedValue = REWARDS_PER_MONTH * 3 + REWARDS_PER_MONTH * 3 / 5;
-        console2.log("Month 20. Alice rewards:", rewardToken.balanceOf(alice), "->", uint256(expectedValue));
         assert(Lib.similar(rewardToken.balanceOf(alice), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 9;
-        console2.log("Month 20. Bob rewards:", rewardToken.balanceOf(bob), "->", uint256(expectedValue));
         assert(Lib.similar(rewardToken.balanceOf(bob), uint256(expectedValue)));
         expectedValue = REWARDS_PER_MONTH * 15;
-        console2.log(
-            "Total rewards:", rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), "->", uint256(expectedValue)
-        );
         assert(Lib.similar(rewardToken.balanceOf(alice) + rewardToken.balanceOf(bob), uint256(expectedValue)));
 
         // Check if withdrawls were successful

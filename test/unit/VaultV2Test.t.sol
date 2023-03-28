@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import { Test } from "@forge-std/Test.sol";
 import { console2 } from "@forge-std/console2.sol";
 import { UUPSProxy } from "src/src-default/UUPSProxy.sol";
-import { VaultFixture } from "./../utils/VaultFixture.sol";
+import { UniswapHelper } from "./../utils/UniswapHelper.sol";
 import { LayerZeroHelper } from "./../utils/LayerZeroHelper.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { IVaultV2 } from "src/src-default/interfaces/IVaultV2.sol";
@@ -15,10 +15,20 @@ import { LZEndpointMock } from "@layerZero/mocks/LZEndpointMock.sol";
 import { Lib } from "test/utils/Library.sol";
 
 contract VaultV2Test is Test, LayerZeroHelper {
+    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+    uint128 constant REWARDS_PER_SECOND = 317;
+    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
+    uint128 constant MIN_DEPOSIT = 1000;
+    uint256 constant STARTING_TIME = 1000;
+
+    uint256 public time = STARTING_TIME;
     uint256 public constant ALICE_INITIAL_LP_BALANCE = 1 ether;
     uint256 public constant BOB_INITIAL_LP_BALANCE = 2 ether;
     uint16 constant CHAIN_ID_1 = 1;
     uint16 constant CHAIN_ID_2 = 2;
+
+    address public alice = vm.addr(1500);
+    address public bob = vm.addr(1501);
 
     VaultV2 public vaultv2_chain1;
     VaultV2 public vaultv2_chain2;
@@ -31,6 +41,9 @@ contract VaultV2Test is Test, LayerZeroHelper {
 
     function setUp() public override {
         super.setUp();
+
+        vm.label(alice, "Alice");
+        vm.label(bob, "Bob");
 
         giveLPtokens(alice, ALICE_INITIAL_LP_BALANCE);
         giveLPtokens(bob, BOB_INITIAL_LP_BALANCE);
@@ -147,7 +160,7 @@ contract VaultV2Test is Test, LayerZeroHelper {
         totalShares_chain1 = totalShares_chain1 & 0xffffffffffffffffffffffffffffffff;
         uint256 totalShares_chain2 = uint256(vm.load(address(vaultv2_chain2), bytes32(uint256(101))));
         totalShares_chain2 = totalShares_chain2 & 0xffffffffffffffffffffffffffffffff;
-        console2.log("Number of shares in both chains:", totalShares_chain1, "<->", totalShares_chain2);
+        //console2.log("Number of shares in both chains:", totalShares_chain1, "<->", totalShares_chain2);
         uint128 expectedValue = uint128(ALICE_INITIAL_LP_BALANCE + BOB_INITIAL_LP_BALANCE * 2);
         assert(totalShares_chain1 == totalShares_chain2 && totalShares_chain2 == expectedValue);
 
@@ -168,7 +181,6 @@ contract VaultV2Test is Test, LayerZeroHelper {
         depositIds = vaultv2_chain2.getDepositIds(bob);
         vaultv2_chain2.claimRewards(depositIds);
         expectedValue = REWARDS_PER_MONTH * 3 * 4 / 5 + REWARDS_PER_MONTH * 2;
-        console2.log("Bob rewards:", rewardToken_chain2.balanceOf(bob), "<->", uint256(expectedValue));
         assert(Lib.similar(rewardToken_chain2.balanceOf(bob), uint256(expectedValue)));
         vm.expectRevert(IVault.NoAssetToWithdrawError.selector);
         vaultv2_chain2.withdraw();
