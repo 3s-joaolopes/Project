@@ -7,24 +7,14 @@ import { Vault } from "src/src-default/Vault.sol";
 import { IVault } from "src/src-default/interfaces/IVault.sol";
 import { Token } from "./Token.sol";
 import { WETH9 } from "./WETH9.sol";
-import { Lib } from "test/utils/Library.sol";
 
-contract VaultFixture is Test {
-    uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
-    uint128 constant REWARDS_PER_SECOND = 317;
-    uint128 constant REWARDS_PER_MONTH = REWARDS_PER_SECOND * SECONDS_IN_30_DAYS;
-    uint128 constant MIN_DEPOSIT = 1000;
-    uint256 constant STARTING_TIME = 1000;
-
-    uint256 public constant UNISWAP_INITIAL_TOKEN_RESERVE = 100_000_000 ether;
-    uint256 public constant UNISWAP_INITIAL_WETH_RESERVE = 100_000_000 ether;
+contract UniswapHelper is Test {
+    uint256 private constant UNISWAP_INITIAL_TOKEN_RESERVE = 100_000_000 ether;
+    uint256 private constant UNISWAP_INITIAL_WETH_RESERVE = 100_000_000 ether;
 
     address public deployer = vm.addr(1000);
-    address public alice = vm.addr(1500);
-    address public bob = vm.addr(1501);
     address public router;
     address public factory;
-    uint256 public time = STARTING_TIME;
 
     IERC20 public LPtoken;
 
@@ -35,19 +25,9 @@ contract VaultFixture is Test {
     }
 
     function setUp() public virtual {
+        vm.label(deployer, "Deployer");
         vm.deal(deployer, UNISWAP_INITIAL_WETH_RESERVE);
         setUpUniswap();
-
-        vm.label(deployer, "Deployer");
-        vm.label(alice, "Alice");
-        vm.label(bob, "Bob");
-
-        //sanity checks
-        assert(Lib.similar(100, 110) == false);
-        assert(Lib.similar(110, 100) == false);
-        assert(Lib.similar(100, 101) == true);
-        assert(Lib.similar(101, 100) == true);
-        assert(Lib.similar(100, 100) == true);
     }
 
     function giveLPtokens(address receiver_, uint256 amount_) public isDeployer {
@@ -62,17 +42,6 @@ contract VaultFixture is Test {
 
     function getLPTokenBalance(address address_) public view returns (uint256 balance_) {
         balance_ = LPtoken.balanceOf(address_);
-    }
-
-    function deposit(address vaultAddr_, address depositor_, uint128 deposit_, uint64 monthsLocked_) public {
-        vm.startPrank(depositor_);
-        uint256 startingBalance = LPtoken.balanceOf(depositor_);
-        uint64 hint_ =
-            IVault(vaultAddr_).getInsertPosition(uint64(block.timestamp) + monthsLocked_ * SECONDS_IN_30_DAYS);
-        LPtoken.approve(vaultAddr_, deposit_);
-        IVault(vaultAddr_).deposit(deposit_, monthsLocked_, hint_);
-        assert(LPtoken.balanceOf(depositor_) == startingBalance - deposit_);
-        vm.stopPrank();
     }
 
     function setUpUniswap() internal isDeployer {
