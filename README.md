@@ -1,5 +1,24 @@
 
-This project (developed using the Foundry framework) consists on the creation of a vault which stores tokens locked for a certain amount of time and distributes rewards to depositors.
+This project consists on the creation of a vault is which depositors can lock tokens and claim rewards.
+
+### Repo
+
+This repo was developed using the [Foundry framework](https://book.getfoundry.sh/).
+
+In this repo you can actually find two versions of the vault (explained bellow), as well as the tests used to verify the security of such vaults.
+
+The main components of this repo are:
+- src folder
+    - vault
+    - vault v2
+    - reward token (Omnichain fungible token) 
+    - proxy
+- test folder
+    - unit tests
+    - fuzz tests
+    - invariant tests
+
+The code quality of the tests increases with complexity, with the invariant tests being the cleanest.
 
 ### Vault
 
@@ -39,11 +58,11 @@ A deposit is represented as a struct containing:
 
 Whenever a user makes a **deposit, withdrawal** or **claims rewards,** the vault starts by checking the sorted list for deposits that have expired. 
 If an expired deposit is found, the system:
-    - updates the rewards per share
-    - adds the claimable rewards of the expired deposit to pendingRewards
-    - adds the initial deposit to the withdrawableLPtokens so it can be withdrawn
-    - burns the corresponding shares (reducing the total number of outstanding shares)
-    - removes this element from the deposit list
+- updates the rewards per share
+- adds the claimable rewards of the expired deposit to pendingRewards
+- adds the initial deposit to the withdrawableLPtokens so it can be withdrawn
+- burns the corresponding shares (reducing the total number of outstanding shares)
+- removes this element from the deposit list
 
 ### Build
 
