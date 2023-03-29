@@ -23,6 +23,7 @@ contract VaultV2Invariants is Test {
         excludeArtifact("VaultV2");
         excludeArtifact("OFToken");
         excludeArtifact("LZEndpointMock");
+        excludeArtifact("VaultV2Replica");
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------//
@@ -114,7 +115,7 @@ contract VaultV2Invariants is Test {
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
             uint256[] memory initialAsset_ = handler.getActorsInitialAssetByChainIndex(i_);
             uint256[] memory asset_ = handler.getActorsAssetByChainIndex(i_);
-            uint256[] memory unwithdrawnAsset_ = handler.getActorsUnwithdrawnAssetByChainIndex(i_);
+            uint256[] memory unwithdrawnAsset_ = handler.getExpectedActorsAssetByChainIndex(i_);
             assert(Lib.vectorEquals(initialAsset_, Lib.vectorSum(asset_, unwithdrawnAsset_)));
         }
     }
@@ -134,7 +135,7 @@ contract VaultV2Invariants is Test {
     //------------------------------------------------------------------------------------------------------------------------------------//
 
     // Log results to console
-    function invariant_LogSummary_SkipCI() public {
+    function invariant_LogSummary_SkipCI() public view {
         uint256 numberOfChains_ = handler.getNumberOfChains();
         console2.log("Logs------------- chains:", numberOfChains_);
         for (uint256 i_ = 0; i_ < numberOfChains_; i_++) {
