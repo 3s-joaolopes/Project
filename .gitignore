@@ -11,3 +11,4 @@ docs/
 *.log
 .DS_Store
 lcov.info
+test/invariant/out.txt
