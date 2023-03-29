@@ -20,7 +20,7 @@ contract VaultV2 is IVaultV2, UUPSUpgradeable, VaultV2Storage {
     uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
     uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
     uint64 constant DEPOSIT_LIST_START_ID = 1;
-    uint64 constant SEND_VALUE = 1 ether;
+    uint64 constant SEND_VALUE = 2 ether;
     uint16 constant CHAIN_LIST_SEPARATOR = 998;
 
     //------------------------------------------------------------------------------------------------------------------------------------//
