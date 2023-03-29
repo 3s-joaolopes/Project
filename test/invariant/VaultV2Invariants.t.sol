@@ -6,6 +6,9 @@ import { Lib } from "test/utils/Library.sol";
 import { VaultV2Handler } from "./VaultV2Handler.sol";
 import { console2 } from "@forge-std/console2.sol";
 
+// Invariants that start with "correct" are invariants that compare the vault behavior
+//      with the vault replica behavior
+
 contract VaultV2Invariants is Test {
     VaultV2Handler handler;
 
@@ -147,7 +150,7 @@ contract VaultV2Invariants is Test {
         }
     }
 
-    // Write results to out.txt file
+    // Write logs to out.txt file
     function _invariant_WriteSummary_SkipCI() public {
         vm.writeLine("test/invariant/out.txt", "Logs--------");
         uint256 numberOfChains_ = handler.getNumberOfChains();
