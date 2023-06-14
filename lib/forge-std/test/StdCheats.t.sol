@@ -57,13 +57,23 @@ contract StdCheatsTest is Test {
         test.bar(address(this));
     }
 
-    function testChangePrank() public {
+    function testChangePrankMsgSender() public {
         vm.startPrank(address(1337));
         test.bar(address(1337));
         changePrank(address(0xdead));
         test.bar(address(0xdead));
         changePrank(address(1337));
         test.bar(address(1337));
+        vm.stopPrank();
+    }
+
+    function testChangePrankMsgSenderAndTxOrigin() public {
+        vm.startPrank(address(1337), address(1338));
+        test.origin(address(1337), address(1338));
+        changePrank(address(0xdead), address(0xbeef));
+        test.origin(address(0xdead), address(0xbeef));
+        changePrank(address(1337), address(1338));
+        test.origin(address(1337), address(1338));
         vm.stopPrank();
     }
 
@@ -92,7 +102,7 @@ contract StdCheatsTest is Test {
         assertEq(barToken.balanceOf(address(this)), 10000e18);
     }
 
-    function testDealTokenAdjustTS() public {
+    function testDealTokenAdjustTotalSupply() public {
         Bar barToken = new Bar();
         address bar = address(barToken);
         deal(bar, address(this), 10000e18, true);
@@ -101,6 +111,35 @@ contract StdCheatsTest is Test {
         deal(bar, address(this), 0, true);
         assertEq(barToken.balanceOf(address(this)), 0);
         assertEq(barToken.totalSupply(), 10000e18);
+    }
+
+    function testDealERC1155Token() public {
+        BarERC1155 barToken = new BarERC1155();
+        address bar = address(barToken);
+        dealERC1155(bar, address(this), 0, 10000e18, false);
+        assertEq(barToken.balanceOf(address(this), 0), 10000e18);
+    }
+
+    function testDealERC1155TokenAdjustTotalSupply() public {
+        BarERC1155 barToken = new BarERC1155();
+        address bar = address(barToken);
+        dealERC1155(bar, address(this), 0, 10000e18, true);
+        assertEq(barToken.balanceOf(address(this), 0), 10000e18);
+        assertEq(barToken.totalSupply(0), 20000e18);
+        dealERC1155(bar, address(this), 0, 0, true);
+        assertEq(barToken.balanceOf(address(this), 0), 0);
+        assertEq(barToken.totalSupply(0), 10000e18);
+    }
+
+    function testDealERC721Token() public {
+        BarERC721 barToken = new BarERC721();
+        address bar = address(barToken);
+        dealERC721(bar, address(2), 1);
+        assertEq(barToken.balanceOf(address(2)), 1);
+        assertEq(barToken.balanceOf(address(1)), 0);
+        dealERC721(bar, address(1), 2);
+        assertEq(barToken.balanceOf(address(1)), 1);
+        assertEq(barToken.balanceOf(bar), 1);
     }
 
     function testDeployCode() public {
@@ -219,6 +258,41 @@ contract StdCheatsTest is Test {
         receipts;
     }
 
+    function testGasMeteringModifier() public {
+        uint256 gas_start_normal = gasleft();
+        addInLoop();
+        uint256 gas_used_normal = gas_start_normal - gasleft();
+
+        uint256 gas_start_single = gasleft();
+        addInLoopNoGas();
+        uint256 gas_used_single = gas_start_single - gasleft();
+
+        uint256 gas_start_double = gasleft();
+        addInLoopNoGasNoGas();
+        uint256 gas_used_double = gas_start_double - gasleft();
+
+        emit log_named_uint("Normal gas", gas_used_normal);
+        emit log_named_uint("Single modifier gas", gas_used_single);
+        emit log_named_uint("Double modifier  gas", gas_used_double);
+        assertTrue(gas_used_double + gas_used_single < gas_used_normal);
+    }
+
+    function addInLoop() internal pure returns (uint256) {
+        uint256 b;
+        for (uint256 i; i < 10000; i++) {
+            b += i;
+        }
+        return b;
+    }
+
+    function addInLoopNoGas() internal noGasMetering returns (uint256) {
+        return addInLoop();
+    }
+
+    function addInLoopNoGasNoGas() internal noGasMetering returns (uint256) {
+        return addInLoopNoGas();
+    }
+
     function bytesToUint_test(bytes memory b) private pure returns (uint256) {
         uint256 number;
         for (uint256 i = 0; i < b.length; i++) {
@@ -227,32 +301,35 @@ contract StdCheatsTest is Test {
         return number;
     }
 
-    function testChainRpcInitialization() public {
-        // RPCs specified in `foundry.toml` should be updated.
-        assertEq(stdChains["mainnet"].rpcUrl, "https://mainnet.infura.io/v3/7a8769b798b642f6933f2ed52042bd70");
-        assertEq(stdChains["optimism_goerli"].rpcUrl, "https://goerli.optimism.io/");
-        assertEq(stdChains["arbitrum_one_goerli"].rpcUrl, "https://goerli-rollup.arbitrum.io/rpc/");
-
-        // Other RPCs should remain unchanged.
-        assertEq(stdChains["anvil"].rpcUrl, "http://127.0.0.1:8545");
-        assertEq(stdChains["hardhat"].rpcUrl, "http://127.0.0.1:8545");
-        assertEq(stdChains["sepolia"].rpcUrl, "https://rpc.sepolia.dev");
-    }
-
-    // Ensure we can connect to the default RPC URL for each chain.
-    function testRpcs() public {
-        (string[2][] memory rpcs) = vm.rpcUrls();
-        for (uint256 i = 0; i < rpcs.length; i++) {
-            ( /* string memory name */ , string memory rpcUrl) = (rpcs[i][0], rpcs[i][1]);
-            vm.createSelectFork(rpcUrl);
-        }
-    }
-
     function testAssumeNoPrecompiles(address addr) external {
-        assumeNoPrecompiles(addr, stdChains["optimism_goerli"].chainId);
+        assumeNoPrecompiles(addr, getChain("optimism_goerli").chainId);
         assertTrue(
             addr < address(1) || (addr > address(9) && addr < address(0x4200000000000000000000000000000000000000))
                 || addr > address(0x4200000000000000000000000000000000000800)
+        );
+    }
+
+    function testAssumePayable() external {
+        // all should revert since these addresses are not payable
+
+        // VM address
+        vm.expectRevert();
+        assumePayable(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
+
+        // Console address
+        vm.expectRevert();
+        assumePayable(0x000000000000000000636F6e736F6c652e6c6f67);
+
+        // Create2Deployer
+        vm.expectRevert();
+        assumePayable(0x4e59b44847b379578588920cA78FbF26c0B4956C);
+    }
+
+    function testAssumePayable(address addr) external {
+        assumePayable(addr);
+        assertTrue(
+            addr != 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D && addr != 0x000000000000000000636F6e736F6c652e6c6f67
+                && addr != 0x4e59b44847b379578588920cA78FbF26c0B4956C
         );
     }
 }
@@ -264,7 +341,7 @@ contract Bar {
         balanceOf[address(this)] = totalSupply;
     }
 
-    /// `HOAX` STDCHEATS
+    /// `HOAX` and `CHANGEPRANK` STDCHEATS
     function bar(address expectedSender) public payable {
         require(msg.sender == expectedSender, "!prank");
     }
@@ -282,6 +359,49 @@ contract Bar {
     /// `DEAL` STDCHEAT
     mapping(address => uint256) public balanceOf;
     uint256 public totalSupply;
+}
+
+contract BarERC1155 {
+    constructor() payable {
+        /// `DEALERC1155` STDCHEAT
+        _totalSupply[0] = 10000e18;
+        _balances[0][address(this)] = _totalSupply[0];
+    }
+
+    function balanceOf(address account, uint256 id) public view virtual returns (uint256) {
+        return _balances[id][account];
+    }
+
+    function totalSupply(uint256 id) public view virtual returns (uint256) {
+        return _totalSupply[id];
+    }
+
+    /// `DEALERC1155` STDCHEAT
+    mapping(uint256 => mapping(address => uint256)) private _balances;
+    mapping(uint256 => uint256) private _totalSupply;
+}
+
+contract BarERC721 {
+    constructor() payable {
+        /// `DEALERC721` STDCHEAT
+        _owners[1] = address(1);
+        _balances[address(1)] = 1;
+        _owners[2] = address(this);
+        _owners[3] = address(this);
+        _balances[address(this)] = 2;
+    }
+
+    function balanceOf(address owner) public view virtual returns (uint256) {
+        return _balances[owner];
+    }
+
+    function ownerOf(uint256 tokenId) public view virtual returns (address) {
+        address owner = _owners[tokenId];
+        return owner;
+    }
+
+    mapping(uint256 => address) private _owners;
+    mapping(address => uint256) private _balances;
 }
 
 contract RevertingContract {

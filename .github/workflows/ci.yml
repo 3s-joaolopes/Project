@@ -38,12 +38,12 @@ jobs:
       - name: Build the contracts
         run: |
           forge --version
-          forge build
+          make build
         id: build
 
       - name: Run the tests
         run: |
-          forge test -vvv
+          make tests-ci
         id: test
   
   static-analysis:
