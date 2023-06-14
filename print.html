@@ -34,6 +34,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -71,10 +72,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -82,7 +85,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item "><a href="index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item "><a href="src/Greeter.sol/contract.Greeter.html">Greeter</a></li></ol>
+                <ol class="chapter"><li class="chapter-item "><a href="index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item "><a href="src/src-default/index.html">❱ src-default</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="src/src-default/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="src/src-default/interfaces/dependencies/index.html">❱ dependencies</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="src/src-default/interfaces/dependencies/ILayerZeroReceiver.sol/interface.ILayerZeroReceiver.html">ILayerZeroReceiver</a></li></ol></li><li class="chapter-item "><a href="src/src-default/interfaces/IVault.sol/interface.IVault.html">IVault</a></li><li class="chapter-item "><a href="src/src-default/interfaces/IVaultV2.sol/interface.IVaultV2.html">IVaultV2</a></li></ol></li><li class="chapter-item "><a href="src/src-default/storage/index.html">❱ storage</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="src/src-default/storage/VaultStorage.sol/contract.VaultStorage.html">VaultStorage</a></li><li class="chapter-item "><a href="src/src-default/storage/VaultV2Storage.sol/contract.VaultV2Storage.html">VaultV2Storage</a></li></ol></li><li class="chapter-item "><a href="src/src-default/OFToken.sol/contract.OFToken.html">OFToken</a></li><li class="chapter-item "><a href="src/src-default/UUPSProxy.sol/contract.UUPSProxy.html">UUPSProxy</a></li><li class="chapter-item "><a href="src/src-default/Vault.sol/contract.Vault.html">Vault</a></li><li class="chapter-item "><a href="src/src-default/VaultV2.sol/contract.VaultV2.html">VaultV2</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -146,53 +149,80 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="foundry-template"><a class="header" href="#foundry-template">Foundry Template <a href="https://github.com/threesigmaxyz/foundry-template/actions"><img src="https://github.com/threesigmaxyz/foundry-template/actions/workflows/ci.yml/badge.svg" alt="Github Actions" /></a> <a href="https://getfoundry.sh/"><img src="https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg" alt="Foundry" /></a> <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a></a></h1>
-<p>A Foundry-based template for developing Solidity smart contracts.</p>
-<h2 id="whats-inside"><a class="header" href="#whats-inside">What's Inside</a></h2>
+                        <p>This project consists on the creation of a vault is which depositors can lock tokens and claim rewards.</p>
+<h3 id="repo"><a class="header" href="#repo">Repo</a></h3>
+<p>This repo was developed using the <a href="https://book.getfoundry.sh/">Foundry framework</a>.</p>
+<p>In this repo you can actually find two versions of the vault (explained bellow), as well as the tests used to verify the security of such vaults.</p>
+<p>The main components of this repo are:</p>
 <ul>
-<li><a href="https://github.com/foundry-rs/foundry/blob/master/forge">Forge</a>: compile, test, fuzz, debug and deploy smart contracts</li>
-<li><a href="https://github.com/foundry-rs/forge-std">Forge Std</a>: collection of helpful contracts and cheatcodes for testing</li>
-<li><a href="https://github.com/foundry-rs/foundry/tree/master/anvil">Anvil</a>: local Ethereum node, akin to Ganache, Hardhat Network.</li>
+<li>src folder
+<ul>
+<li>vault</li>
+<li>vault v2</li>
+<li>reward token (Omnichain fungible token) </li>
+<li>proxy</li>
 </ul>
-<h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
-<p>Click the <a href="https://github.com/threesigmaxyz/foundry-template/generate"><code>Use this template</code></a> button at the top of the page to create a new repository with this repo as the initial state.</p>
-<p>Or, if you prefer to install the template manually:</p>
-<pre><code class="language-sh">forge init my-project --template https://github.com/threesigmaxyz/foundry-template
-cd my-project
-make install
-</code></pre>
-<p>If this is your first time with Foundry, check out the <a href="https://github.com/foundry-rs/foundry#installation">installation</a> instructions.</p>
-<h2 id="blueprint"><a class="header" href="#blueprint">Blueprint</a></h2>
-<pre><code class="language-ml">lib
-├─ forge-std — https://github.com/foundry-rs/forge-std
-├─ openzeppelin-contracts — https://github.com/OpenZeppelin/openzeppelin-contracts
-scripts
-├─ 01_Deploy.s.sol — Simple Deployment Script
-src
-├─ Greeter.sol — A Greeter Contract
-test
-└─ Greeter.t.sol — Minimal Tests
-</code></pre>
-<h2 id="features"><a class="header" href="#features">Features</a></h2>
-<p>This template builds upon the frameworks and libraries mentioned above, so for details about their specific features, please consult their respective documentations.</p>
-<p>For example, for Foundry, you can refer to the <a href="https://book.getfoundry.sh/">Foundry Book</a>. You might be in particular interested in reading the <a href="https://book.getfoundry.sh/forge/writing-tests.html">Writing Tests</a> guide.</p>
-<h3 id="github-actions"><a class="header" href="#github-actions">GitHub Actions</a></h3>
-<p>This template comes with GitHub Actions pre-configured. Your contracts will be linted and tested on every push and pull
-request made to the <code>main</code> branch.</p>
-<p>You can edit the CI script in <a href="./.github/workflows/ci.yml">.github/workflows/ci.yml</a>.</p>
-<h3 id="conventional-commits"><a class="header" href="#conventional-commits">Conventional Commits</a></h3>
-<p>This template enforces the <a href="https://www.conventionalcommits.org/">Conventional Commits</a> standard for git commit messages.
-This is a lightweight convention that creates an explicit commit history, which makes it easier to write automated
-tools on top of.</p>
-<h3 id="sensible-defaults"><a class="header" href="#sensible-defaults">Sensible Defaults</a></h3>
-<p>This template comes with sensible default configurations in the following files:</p>
-<pre><code class="language-text">├── .gitignore
-├── foundry.toml
-└── remappings.txt
-└── slither.config.json
-</code></pre>
-<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
-<p>Here's a list of the most frequently needed commands.</p>
+</li>
+<li>test folder
+<ul>
+<li>unit tests</li>
+<li>fuzz tests</li>
+<li>invariant tests</li>
+</ul>
+</li>
+</ul>
+<p>The code quality of the tests increases with complexity, with the invariant tests being the cleanest.</p>
+<h3 id="vault"><a class="header" href="#vault">Vault</a></h3>
+<ul>
+<li>The vault accepts deposits of <a href="https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2ERC20.sol">Uniswap LP tokens</a> and locks them for a period (6, 12, 24 or 48 months)</li>
+<li>Depositors get rewards based on the deposited amount and lock period. These rewards take the form of ERC20 tokens.</li>
+<li>Depositors can claim their rewards at any time and can witdraw their deposit after the lock period is over
+<ul>
+<li>after the lock period of the LPs, the position stops accruing rewards.</li>
+</ul>
+</li>
+<li>The vault is under a proxy, so the implemtation can be upgraded at anytime by the creators.</li>
+</ul>
+<h3 id="oftoken"><a class="header" href="#oftoken">OFToken</a></h3>
+<ul>
+<li>The token implements the <a href="https://medium.com/layerzero-official/layerzero-an-omnichain-interoperability-protocol-b43d2ae975b6">Layer Zero Omnichain</a> OFT20 functionality</li>
+<li>Can only be minted by the Vault</li>
+<li>Has a fixed issuance rate of 10^10 tokens per year</li>
+</ul>
+<h3 id="vault-v2"><a class="header" href="#vault-v2">Vault v2</a></h3>
+<ul>
+<li>The vault v2 implements Layer Zero’s functionality: <a href="https://medium.com/layerzero-official/layerzero-an-omnichain-interoperability-protocol-b43d2ae975b6">Omnichain</a>
+<ul>
+<li>to distribute the rewards, it uses the tokens deposited in all the Vaults in all chains that implement the Omnichain functionality.</li>
+<li>it is only possible to withdraw or claim rewards from the same chain where the deposit was made.</li>
+</ul>
+</li>
+</ul>
+<h3 id="implementation-logic"><a class="header" href="#implementation-logic">Implementation logic</a></h3>
+<p>To accurately and efficiently distribute rewards, the vault allows for 3 core operations: deposit, withdrawal and claiming rewards.</p>
+<p>This deposits are stores as a linked list, sorted by the expiration time of every deposit.</p>
+<p>A deposit is represented as a struct containing:</p>
+<ul>
+<li>address depositor - addres of the depositor</li>
+<li>uint128 deposit - initial deposit amount</li>
+<li>uint128 shares - number of shares minted (amount deposited x multiplier)
+<ul>
+<li>this multiplier is equal to (monthsLocked_ / 6)</li>
+</ul>
+</li>
+<li>uint128 rewardsPerShare - amount of rewards per share at the start of the deposit</li>
+<li>uint64 expireTime - locktime expiration date (in seconds)</li>
+<li>uint64 nextId - pointer to the next entry in the list</li>
+</ul>
+<p>Whenever a user makes a <strong>deposit, withdrawal</strong> or <strong>claims rewards,</strong> the vault starts by checking the sorted list for deposits that have expired. 
+If an expired deposit is found, the system:</p>
+<ul>
+<li>updates the rewards per share</li>
+<li>adds the claimable rewards of the expired deposit to pendingRewards</li>
+<li>adds the initial deposit to the withdrawableLPtokens so it can be withdrawn</li>
+<li>burns the corresponding shares (reducing the total number of outstanding shares)</li>
+<li>removes this element from the deposit list</li>
+</ul>
 <h3 id="build"><a class="header" href="#build">Build</a></h3>
 <p>Build the contracts:</p>
 <pre><code class="language-sh">$ make build
@@ -205,44 +235,11 @@ tools on top of.</p>
 <p>Compile the contracts:</p>
 <pre><code class="language-sh">$ make build
 </code></pre>
-<h3 id="deploy"><a class="header" href="#deploy">Deploy</a></h3>
-<p>Prior to deployment you must configure the following variables in the <code>.env</code> file:</p>
-<ul>
-<li><code>MAINNET_RPC_URL/TESTNET_RPC_URL</code>: An RPC endpoint to connect to the blockchain.</li>
-<li><code>PRIVATE_KEY</code>: The private key for the deployer wallet.</li>
-<li><code>ETHERSCAN_API_KEY</code>: (Optional) An Etherscan API key for contract verification.</li>
-</ul>
-<p>Note that a fresh <code>ETHERSCAN_API_KEY</code> can take a few minutes to activate, you can query any <a href="https://api-rinkeby.etherscan.io/api?module=block&amp;action=getblockreward&amp;blockno=2165403&amp;apikey=ETHERSCAN_API_KEY">endpoint</a> to check its status.</p>
-<h4 id="local-deployment"><a class="header" href="#local-deployment">Local Deployment</a></h4>
-<p>By default, Foundry ships with a local Ethereum node <a href="https://github.com/foundry-rs/foundry/tree/master/anvil">Anvil</a> (akin to Ganache and Hardhat Network). This allows us to quickly deploy to our local network for testing.</p>
-<p>To start a local blockchain, with a determined private key, run:</p>
-<pre><code class="language-shthreesigmaxyz/foundry-template">make anvil
-</code></pre>
-<p>Afterwards, you can deploy to it via:</p>
-<pre><code class="language-sh">make deploy-anvil contract=&lt;CONTRACT_NAME&gt;
-</code></pre>
-<h4 id="testnet-deployment"><a class="header" href="#testnet-deployment">Testnet Deployment</a></h4>
-<p>In order to deploy the contracts to a testnet you must have configured the <code>TESTNET_RPC_URL</code> variable. Additionaly, if you need testnet ETH for the deployment you can request it from the following <a href="https://faucet.paradigm.xyz/">faucet</a>.</p>
-<p>To execute the deplyment run:</p>
-<pre><code class="language-sh">make deploy-testnet contract=&lt;CONTRACT_NAME&gt;
-</code></pre>
-<p>Forge is going to run our script and broadcast the transactions for us. This can take a little while, since Forge will also wait for the transaction receipts.</p>
-<h4 id="mainnet-deployment"><a class="header" href="#mainnet-deployment">Mainnet Deployment</a></h4>
-<p>A mainnet deployment has a similar flow to a testnet deployment with the distinction that it requires you to configure the <code>MAINNET_RPC_URL</code> variable.</p>
-<p>Afterwards, simply run:</p>
-<pre><code class="language-sh">make deploy-mainnet contract=&lt;CONTRACT_NAME&gt;
-</code></pre>
 <h3 id="test"><a class="header" href="#test">Test</a></h3>
 <p>To run all tests execute the following commad:</p>
 <pre><code>make tests
 </code></pre>
 <p>Alternatively, you can run specific tests as detailed in this <a href="https://book.getfoundry.sh/forge/tests">guide</a>.</p>
-<h3 id="security"><a class="header" href="#security">Security</a></h3>
-<p>This repository includes a Slither configuration, a popular static analysis tool from <a href="https://www.trailofbits.com/">Trail of Bits</a>. To use Slither, you'll first need to <a href="https://www.python.org/downloads/">install Python</a> and <a href="https://github.com/crytic/slither#how-to-install">install Slither</a>.</p>
-<p>Then, you can run:</p>
-<pre><code class="language-sh">make slither
-</code></pre>
-<p>And analyse the output of the tool.</p>
 <h1 id="about-us"><a class="header" href="#about-us">About Us</a></h1>
 <p><a href="https://threesigma.xyz/">Three Sigma</a> is a venture builder firm focused on blockchain engineering, research, and investment. Our mission is to advance the adoption of blockchain technology and contribute towards the healthy development of the Web3 space.</p>
 <p>If you are interested in joining our team, please contact us <a href="mailto:info@threesigma.xyz">here</a>.</p>
@@ -250,55 +247,633 @@ tools on top of.</p>
 <p align="center">
   <img src="https://threesigma.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fthree-sigma-labs-research-capital-white.0f8e8f50.png&w=2048&q=75" width="75%" />
 </p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="greeter"><a class="header" href="#greeter">Greeter</a></h1>
-<p><a href="https://github.com/3s-joaolopes/Project/blob/9af9dd697163b96c0f9a4f5d6bc5ad94bada745b/src/Greeter.sol">Git Source</a></p>
-<h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
-<h3 id="greeting"><a class="header" href="#greeting">greeting</a></h3>
-<p>The greeting message.</p>
-<pre><code class="language-solidity">string public greeting;
-</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="contents"><a class="header" href="#contents">Contents</a></h1>
+<ul>
+<li><a href="src/src-default//src/src-default/interfaces">interfaces</a></li>
+<li><a href="src/src-default//src/src-default/storage">storage</a></li>
+<li><a href="src/src-default/OFToken.sol/contract.OFToken.html">OFToken</a></li>
+<li><a href="src/src-default/UUPSProxy.sol/contract.UUPSProxy.html">UUPSProxy</a></li>
+<li><a href="src/src-default/Vault.sol/contract.Vault.html">Vault</a></li>
+<li><a href="src/src-default/VaultV2.sol/contract.VaultV2.html">VaultV2</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="contents-1"><a class="header" href="#contents-1">Contents</a></h1>
+<ul>
+<li><a href="src/src-default/interfaces//src/src-default/interfaces/dependencies">dependencies</a></li>
+<li><a href="src/src-default/interfaces/IVault.sol/interface.IVault.html">IVault</a></li>
+<li><a href="src/src-default/interfaces/IVaultV2.sol/interface.IVaultV2.html">IVaultV2</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="contents-2"><a class="header" href="#contents-2">Contents</a></h1>
+<ul>
+<li><a href="src/src-default/interfaces/dependencies/ILayerZeroReceiver.sol/interface.ILayerZeroReceiver.html">ILayerZeroReceiver</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="ilayerzeroreceiver"><a class="header" href="#ilayerzeroreceiver">ILayerZeroReceiver</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/interfaces/dependencies/ILayerZeroReceiver.sol">Git Source</a></p>
 <h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
-<h3 id="constructor"><a class="header" href="#constructor">constructor</a></h3>
-<p><em>Constructor function that sets the greeting message.</em></p>
-<pre><code class="language-solidity">constructor(string memory newGreeting);
+<h3 id="lzreceive"><a class="header" href="#lzreceive">lzReceive</a></h3>
+<p>LayerZero endpoint will invoke this function to deliver the message on the destination</p>
+<pre><code class="language-solidity">function lzReceive(uint16 srcChainId_, bytes calldata srcAddress_, uint64 nonce_, bytes calldata payload_) external;
 </code></pre>
 <p><strong>Parameters</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>newGreeting</code></td><td><code>string</code></td><td>The greeting message to be set.</td></tr>
+<tr><td><code>srcChainId_</code></td><td><code>uint16</code></td><td>- the source endpoint identifier</td></tr>
+<tr><td><code>srcAddress_</code></td><td><code>bytes</code></td><td>- the source sending contract address from the source chain</td></tr>
+<tr><td><code>nonce_</code></td><td><code>uint64</code></td><td>- the ordered message nonce</td></tr>
+<tr><td><code>payload_</code></td><td><code>bytes</code></td><td>- the signed payload is the UA bytes has encoded to be sent</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="ivault"><a class="header" href="#ivault">IVault</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/interfaces/IVault.sol">Git Source</a></p>
+<h2 id="functions-1"><a class="header" href="#functions-1">Functions</a></h2>
+<h3 id="deposit"><a class="header" href="#deposit">deposit</a></h3>
+<p>Deposit Uniswap LP tokens and lock them to earn rewards</p>
+<pre><code class="language-solidity">function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>Amount of Uniswap LP tokens to deposit</td></tr>
+<tr><td><code>monthsLocked_</code></td><td><code>uint64</code></td><td>Locking period, in months: 6, 12, 24 or 48</td></tr>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>Hint for insert position on the sorted list</td></tr>
 </tbody></table>
 </div>
-<h3 id="greet"><a class="header" href="#greet">greet</a></h3>
-<p>Function to greet everyone with a given message.</p>
-<pre><code class="language-solidity">function greet(string memory myGm) external returns (string memory greet_);
+<h3 id="withdraw"><a class="header" href="#withdraw">withdraw</a></h3>
+<p>Withdraw LP tokens after lock period has expired</p>
+<pre><code class="language-solidity">function withdraw() external;
+</code></pre>
+<h3 id="claimrewards"><a class="header" href="#claimrewards">claimRewards</a></h3>
+<p>Transfer claimable rewards to msg.sender</p>
+<pre><code class="language-solidity">function claimRewards(uint64[] calldata depositIds_) external;
 </code></pre>
 <p><strong>Parameters</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>myGm</code></td><td><code>string</code></td><td>The message to be used for greeting.</td></tr>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by msg.sender</td></tr>
+</tbody></table>
+</div>
+<h3 id="getwithdrawableamount"><a class="header" href="#getwithdrawableamount">getWithdrawableAmount</a></h3>
+<p>The amount of asset a depositor can withdraw</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getWithdrawableAmount(address depositor_) external view returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
 </tbody></table>
 </div>
 <p><strong>Returns</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>greet_</code></td><td><code>string</code></td><td>The message used for greeting.</td></tr>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be withdrawn</td></tr>
 </tbody></table>
 </div>
-<h3 id="setgreeting"><a class="header" href="#setgreeting">setGreeting</a></h3>
-<p>Sets the greeting message.</p>
-<pre><code class="language-solidity">function setGreeting(string memory newGreeting) external;
+<h3 id="getclaimablerewards"><a class="header" href="#getclaimablerewards">getClaimableRewards</a></h3>
+<p>The amount of reward tokens that can be claimed by a depositor</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    external
+    view
+    returns (uint128 amount_);
 </code></pre>
 <p><strong>Parameters</strong></p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>newGreeting</code></td><td><code>string</code></td><td>The new greeting message.</td></tr>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by depositor_</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be claimed</td></tr>
+</tbody></table>
+</div>
+<h3 id="getinsertposition"><a class="header" href="#getinsertposition">getInsertPosition</a></h3>
+<p>The insert position on the sorted list</p>
+<pre><code class="language-solidity">function getInsertPosition(uint64 expireTime_) external view returns (uint64 hint_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>expireTime_</code></td><td><code>uint64</code></td><td>the expire time of a deposit</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="getdepositids"><a class="header" href="#getdepositids">getDepositIds</a></h3>
+<p>The deposit ids of all the active deposits held by a depositor</p>
+<pre><code class="language-solidity">function getDepositIds(address depositor_) external view returns (uint64[] memory depositIds_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>deposit ids</td></tr>
 </tbody></table>
 </div>
 <h2 id="events"><a class="header" href="#events">Events</a></h2>
-<h3 id="loggreet"><a class="header" href="#loggreet">LogGreet</a></h3>
-<p>Emitted when upon a valid greet.</p>
-<pre><code class="language-solidity">event LogGreet();
+<h3 id="logdeposit"><a class="header" href="#logdeposit">LogDeposit</a></h3>
+<pre><code class="language-solidity">event LogDeposit(address indexed address_, uint128 amount_, uint64 monthsLocked_);
+</code></pre>
+<h3 id="logwithdraw"><a class="header" href="#logwithdraw">LogWithdraw</a></h3>
+<pre><code class="language-solidity">event LogWithdraw(address indexed address_, uint128 amount_);
+</code></pre>
+<h3 id="logclaimrewards"><a class="header" href="#logclaimrewards">LogClaimRewards</a></h3>
+<pre><code class="language-solidity">event LogClaimRewards(address indexed address_, uint128 amount_);
+</code></pre>
+<h3 id="logexpireddeposit"><a class="header" href="#logexpireddeposit">LogExpiredDeposit</a></h3>
+<pre><code class="language-solidity">event LogExpiredDeposit(address indexed address_, uint128 deposit_, uint128 rewards_);
 </code></pre>
 <h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
-<h3 id="badgmerror"><a class="header" href="#badgmerror">BadGmError</a></h3>
-<p>Thrown when a bad greet is requested.</p>
-<pre><code class="language-solidity">error BadGmError();
+<h3 id="unauthorizederror"><a class="header" href="#unauthorizederror">UnauthorizedError</a></h3>
+<pre><code class="language-solidity">error UnauthorizedError();
+</code></pre>
+<h3 id="alreadyinitializederror"><a class="header" href="#alreadyinitializederror">AlreadyInitializedError</a></h3>
+<pre><code class="language-solidity">error AlreadyInitializedError();
+</code></pre>
+<h3 id="noassettowithdrawerror"><a class="header" href="#noassettowithdrawerror">NoAssetToWithdrawError</a></h3>
+<pre><code class="language-solidity">error NoAssetToWithdrawError();
+</code></pre>
+<h3 id="norewardstoclaimerror"><a class="header" href="#norewardstoclaimerror">NoRewardsToClaimError</a></h3>
+<pre><code class="language-solidity">error NoRewardsToClaimError();
+</code></pre>
+<h3 id="invalidhinterror"><a class="header" href="#invalidhinterror">InvalidHintError</a></h3>
+<pre><code class="language-solidity">error InvalidHintError();
+</code></pre>
+<h3 id="invalidlockperioderror"><a class="header" href="#invalidlockperioderror">InvalidLockPeriodError</a></h3>
+<pre><code class="language-solidity">error InvalidLockPeriodError();
+</code></pre>
+<h3 id="insuficientdepositamounterror"><a class="header" href="#insuficientdepositamounterror">InsuficientDepositAmountError</a></h3>
+<pre><code class="language-solidity">error InsuficientDepositAmountError();
+</code></pre>
+<h3 id="assettransfererror"><a class="header" href="#assettransfererror">AssetTransferError</a></h3>
+<pre><code class="language-solidity">error AssetTransferError();
+</code></pre>
+<h2 id="structs"><a class="header" href="#structs">Structs</a></h2>
+<h3 id="deposit-1"><a class="header" href="#deposit-1">Deposit</a></h3>
+<pre><code class="language-solidity">struct Deposit {
+    address depositor;
+    uint128 deposit;
+    uint128 shares;
+    uint128 rewardsPerShare;
+    uint64 expireTime;
+    uint64 nextId;
+}
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="ivaultv2"><a class="header" href="#ivaultv2">IVaultV2</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/interfaces/IVaultV2.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="src/src-default/interfaces/IVaultV2.sol//src/src-default/interfaces/IVault.sol/interface.IVault.html">IVault</a>, <a href="src/src-default/interfaces/IVaultV2.sol//src/src-default/interfaces/dependencies/ILayerZeroReceiver.sol/interface.ILayerZeroReceiver.html">ILayerZeroReceiver</a></p>
+<h2 id="functions-2"><a class="header" href="#functions-2">Functions</a></h2>
+<h3 id="addtrustedremoteaddress"><a class="header" href="#addtrustedremoteaddress">addTrustedRemoteAddress</a></h3>
+<p>Add a vault on a remote chain as a trusted source of information</p>
+<pre><code class="language-solidity">function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>remoteChainId_</code></td><td><code>uint16</code></td><td>identifier of the remote chain</td></tr>
+<tr><td><code>remoteAddress_</code></td><td><code>bytes</code></td><td>address of the vault on the remote chain</td></tr>
+</tbody></table>
+</div>
+<h3 id="resettrustedremoteaddresses"><a class="header" href="#resettrustedremoteaddresses">resetTrustedRemoteAddresses</a></h3>
+<p>Reset the white-listed &quot;trusted source of information&quot; vault addresses</p>
+<pre><code class="language-solidity">function resetTrustedRemoteAddresses() external;
+</code></pre>
+<h3 id="setlzendpoint"><a class="header" href="#setlzendpoint">setLzEndpoint</a></h3>
+<p>Set the LayerZero endpoint for inter-chain communication</p>
+<pre><code class="language-solidity">function setLzEndpoint(address lzEndpoint_) external;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>lzEndpoint_</code></td><td><code>address</code></td><td>address of thw new endpoint</td></tr>
+</tbody></table>
+</div>
+<h2 id="events-1"><a class="header" href="#events-1">Events</a></h2>
+<h3 id="logomnichaindeposit"><a class="header" href="#logomnichaindeposit">LogOmnichainDeposit</a></h3>
+<pre><code class="language-solidity">event LogOmnichainDeposit(
+    uint16 srcChainId_, address fromAddress_, uint128 shares_, uint64 depositTime_, uint64 expiretime_
+);
+</code></pre>
+<h3 id="logtrustedremoteaddress"><a class="header" href="#logtrustedremoteaddress">LogTrustedRemoteAddress</a></h3>
+<pre><code class="language-solidity">event LogTrustedRemoteAddress(uint16 remoteChainId_, bytes remoteAddress_);
+</code></pre>
+<h3 id="lognewlzendpoint"><a class="header" href="#lognewlzendpoint">LogNewLzEndpoint</a></h3>
+<pre><code class="language-solidity">event LogNewLzEndpoint(address lzEndpoint_);
+</code></pre>
+<h2 id="errors-1"><a class="header" href="#errors-1">Errors</a></h2>
+<h3 id="notendpointerror"><a class="header" href="#notendpointerror">NotEndpointError</a></h3>
+<pre><code class="language-solidity">error NotEndpointError();
+</code></pre>
+<h3 id="nottrustedsourceerror"><a class="header" href="#nottrustedsourceerror">NotTrustedSourceError</a></h3>
+<pre><code class="language-solidity">error NotTrustedSourceError();
+</code></pre>
+<h3 id="invalidchainiderror"><a class="header" href="#invalidchainiderror">InvalidChainIdError</a></h3>
+<pre><code class="language-solidity">error InvalidChainIdError();
+</code></pre>
+<h3 id="duplicatingchainiderror"><a class="header" href="#duplicatingchainiderror">DuplicatingChainIdError</a></h3>
+<pre><code class="language-solidity">error DuplicatingChainIdError();
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="contents-3"><a class="header" href="#contents-3">Contents</a></h1>
+<ul>
+<li><a href="src/src-default/storage/VaultStorage.sol/contract.VaultStorage.html">VaultStorage</a></li>
+<li><a href="src/src-default/storage/VaultV2Storage.sol/contract.VaultV2Storage.html">VaultV2Storage</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="vaultstorage"><a class="header" href="#vaultstorage">VaultStorage</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/storage/VaultStorage.sol">Git Source</a></p>
+<h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
+<h3 id="_totalshares"><a class="header" href="#_totalshares">_totalShares</a></h3>
+<pre><code class="language-solidity">uint128 internal _totalShares;
+</code></pre>
+<h3 id="_lastrewardspershare"><a class="header" href="#_lastrewardspershare">_lastRewardsPerShare</a></h3>
+<pre><code class="language-solidity">uint128 internal _lastRewardsPerShare;
+</code></pre>
+<h3 id="_lastrewardupdatetime"><a class="header" href="#_lastrewardupdatetime">_lastRewardUpdateTime</a></h3>
+<pre><code class="language-solidity">uint64 internal _lastRewardUpdateTime;
+</code></pre>
+<h3 id="_idcounter"><a class="header" href="#_idcounter">_idCounter</a></h3>
+<pre><code class="language-solidity">uint64 internal _idCounter;
+</code></pre>
+<h3 id="_owner"><a class="header" href="#_owner">_owner</a></h3>
+<pre><code class="language-solidity">address internal _owner;
+</code></pre>
+<h3 id="_initialized"><a class="header" href="#_initialized">_initialized</a></h3>
+<pre><code class="language-solidity">bool internal _initialized;
+</code></pre>
+<h3 id="_withdrawableassets"><a class="header" href="#_withdrawableassets">_withdrawableAssets</a></h3>
+<pre><code class="language-solidity">mapping(address =&gt; uint128) internal _withdrawableAssets;
+</code></pre>
+<h3 id="_pendingrewards"><a class="header" href="#_pendingrewards">_pendingRewards</a></h3>
+<pre><code class="language-solidity">mapping(address =&gt; int128) internal _pendingRewards;
+</code></pre>
+<h3 id="_depositlist"><a class="header" href="#_depositlist">_depositList</a></h3>
+<pre><code class="language-solidity">mapping(uint64 =&gt; IVault.Deposit) internal _depositList;
+</code></pre>
+<h3 id="asset"><a class="header" href="#asset">asset</a></h3>
+<pre><code class="language-solidity">IERC20 public asset;
+</code></pre>
+<h3 id="rewardtoken"><a class="header" href="#rewardtoken">rewardToken</a></h3>
+<pre><code class="language-solidity">OFToken public rewardToken;
+</code></pre>
+<h3 id="lzendpoint"><a class="header" href="#lzendpoint">lzEndpoint</a></h3>
+<pre><code class="language-solidity">ILayerZeroEndpoint public lzEndpoint;
+</code></pre>
+<h3 id="_gap"><a class="header" href="#_gap">_gap</a></h3>
+<pre><code class="language-solidity">uint256[50] internal _gap;
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="vaultv2storage"><a class="header" href="#vaultv2storage">VaultV2Storage</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/storage/VaultV2Storage.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="src/src-default/storage/VaultV2Storage.sol//src/src-default/storage/VaultStorage.sol/contract.VaultStorage.html">VaultStorage</a></p>
+<h2 id="state-variables-1"><a class="header" href="#state-variables-1">State Variables</a></h2>
+<h3 id="_trustedremotelookup"><a class="header" href="#_trustedremotelookup">_trustedRemoteLookup</a></h3>
+<pre><code class="language-solidity">mapping(uint16 =&gt; bytes) internal _trustedRemoteLookup;
+</code></pre>
+<h3 id="_chainidlist"><a class="header" href="#_chainidlist">_chainIdList</a></h3>
+<pre><code class="language-solidity">mapping(uint16 =&gt; uint16) internal _chainIdList;
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="oftoken-1"><a class="header" href="#oftoken-1">OFToken</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/OFToken.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+OFT</p>
+<h2 id="state-variables-2"><a class="header" href="#state-variables-2">State Variables</a></h2>
+<h3 id="_owner-1"><a class="header" href="#_owner-1">_owner</a></h3>
+<pre><code class="language-solidity">address private _owner;
+</code></pre>
+<h2 id="functions-3"><a class="header" href="#functions-3">Functions</a></h2>
+<h3 id="onlyowner_"><a class="header" href="#onlyowner_">onlyOwner_</a></h3>
+<pre><code class="language-solidity">modifier onlyOwner_();
+</code></pre>
+<h3 id="constructor"><a class="header" href="#constructor">constructor</a></h3>
+<pre><code class="language-solidity">constructor(address owner_, string memory name_, string memory symbol_, address lzEndpoint_)
+    OFT(name_, symbol_, lzEndpoint_);
+</code></pre>
+<h3 id="mintrewards"><a class="header" href="#mintrewards">mintRewards</a></h3>
+<p><em>Mint tokens to receiver</em></p>
+<pre><code class="language-solidity">function mintRewards(address receiver_, uint256 amount_) external onlyOwner_;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>receiver_</code></td><td><code>address</code></td><td>Receiver of the tokens</td></tr>
+<tr><td><code>amount_</code></td><td><code>uint256</code></td><td>Amount of tokens to mint</td></tr>
+</tbody></table>
+</div>
+<h2 id="errors-2"><a class="header" href="#errors-2">Errors</a></h2>
+<h3 id="unauthorizederror-1"><a class="header" href="#unauthorizederror-1">UnauthorizedError</a></h3>
+<pre><code class="language-solidity">error UnauthorizedError();
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="uupsproxy"><a class="header" href="#uupsproxy">UUPSProxy</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/UUPSProxy.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+ERC1967Proxy</p>
+<h2 id="functions-4"><a class="header" href="#functions-4">Functions</a></h2>
+<h3 id="constructor-1"><a class="header" href="#constructor-1">constructor</a></h3>
+<pre><code class="language-solidity">constructor(address _implementation, bytes memory _data) ERC1967Proxy(_implementation, _data);
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="vault-1"><a class="header" href="#vault-1">Vault</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/Vault.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="src/src-default/Vault.sol//src/src-default/interfaces/IVault.sol/interface.IVault.html">IVault</a>, UUPSUpgradeable, <a href="src/src-default/Vault.sol//src/src-default/storage/VaultStorage.sol/contract.VaultStorage.html">VaultStorage</a></p>
+<h2 id="state-variables-3"><a class="header" href="#state-variables-3">State Variables</a></h2>
+<h3 id="reward_precision"><a class="header" href="#reward_precision">REWARD_PRECISION</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARD_PRECISION = 1 ether;
+</code></pre>
+<h3 id="rewards_per_second"><a class="header" href="#rewards_per_second">REWARDS_PER_SECOND</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION;
+</code></pre>
+<h3 id="minimum_deposit_amount"><a class="header" href="#minimum_deposit_amount">MINIMUM_DEPOSIT_AMOUNT</a></h3>
+<pre><code class="language-solidity">uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
+</code></pre>
+<h3 id="seconds_in_30_days"><a class="header" href="#seconds_in_30_days">SECONDS_IN_30_DAYS</a></h3>
+<pre><code class="language-solidity">uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+</code></pre>
+<h3 id="deposit_list_start_id"><a class="header" href="#deposit_list_start_id">DEPOSIT_LIST_START_ID</a></h3>
+<pre><code class="language-solidity">uint64 constant DEPOSIT_LIST_START_ID = 1;
+</code></pre>
+<h2 id="functions-5"><a class="header" href="#functions-5">Functions</a></h2>
+<h3 id="onlyowner"><a class="header" href="#onlyowner">onlyOwner</a></h3>
+<pre><code class="language-solidity">modifier onlyOwner();
+</code></pre>
+<h3 id="initialize"><a class="header" href="#initialize">initialize</a></h3>
+<p><em>Acts as the constructor</em></p>
+<pre><code class="language-solidity">function initialize(address asset_, address tokenLzEndpoint_) external;
+</code></pre>
+<h3 id="deposit-2"><a class="header" href="#deposit-2">deposit</a></h3>
+<p>Deposit Uniswap LP tokens and lock them to earn rewards</p>
+<pre><code class="language-solidity">function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>Amount of Uniswap LP tokens to deposit</td></tr>
+<tr><td><code>monthsLocked_</code></td><td><code>uint64</code></td><td>Locking period, in months: 6, 12, 24 or 48</td></tr>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>Hint for insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="withdraw-1"><a class="header" href="#withdraw-1">withdraw</a></h3>
+<p>Withdraw LP tokens after lock period has expired</p>
+<pre><code class="language-solidity">function withdraw() external override;
+</code></pre>
+<h3 id="claimrewards-1"><a class="header" href="#claimrewards-1">claimRewards</a></h3>
+<p>Transfer claimable rewards to msg.sender</p>
+<pre><code class="language-solidity">function claimRewards(uint64[] calldata depositIds_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by msg.sender</td></tr>
+</tbody></table>
+</div>
+<h3 id="getwithdrawableamount-1"><a class="header" href="#getwithdrawableamount-1">getWithdrawableAmount</a></h3>
+<p>The amount of asset a depositor can withdraw</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be withdrawn</td></tr>
+</tbody></table>
+</div>
+<h3 id="getclaimablerewards-1"><a class="header" href="#getclaimablerewards-1">getClaimableRewards</a></h3>
+<p>The amount of reward tokens that can be claimed by a depositor</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    public
+    view
+    override
+    returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by depositor_</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be claimed</td></tr>
+</tbody></table>
+</div>
+<h3 id="getinsertposition-1"><a class="header" href="#getinsertposition-1">getInsertPosition</a></h3>
+<p>The insert position on the sorted list</p>
+<pre><code class="language-solidity">function getInsertPosition(uint64 expireTime_) public view override returns (uint64 hint_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>expireTime_</code></td><td><code>uint64</code></td><td>the expire time of a deposit</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="getdepositids-1"><a class="header" href="#getdepositids-1">getDepositIds</a></h3>
+<p>The deposit ids of all the active deposits held by a depositor</p>
+<pre><code class="language-solidity">function getDepositIds(address depositor_) external view override returns (uint64[] memory depositIds_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>deposit ids</td></tr>
+</tbody></table>
+</div>
+<h3 id="_maintaindepositlist"><a class="header" href="#_maintaindepositlist">_maintainDepositList</a></h3>
+<pre><code class="language-solidity">function _maintainDepositList() internal;
+</code></pre>
+<h3 id="_updaterewardspershare"><a class="header" href="#_updaterewardspershare">_updateRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _updateRewardsPerShare(uint128 shareVariation_, bool positiveVariation_, uint64 timeStamp_)
+    internal
+    returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_authorizeupgrade"><a class="header" href="#_authorizeupgrade">_authorizeUpgrade</a></h3>
+<pre><code class="language-solidity">function _authorizeUpgrade(address newImplementation) internal override onlyOwner;
+</code></pre>
+<h3 id="_getrewardspershare"><a class="header" href="#_getrewardspershare">_getRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_isvalid"><a class="header" href="#_isvalid">_isValid</a></h3>
+<pre><code class="language-solidity">function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_);
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="vaultv2"><a class="header" href="#vaultv2">VaultV2</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/VaultV2.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="src/src-default/VaultV2.sol//src/src-default/interfaces/IVaultV2.sol/interface.IVaultV2.html">IVaultV2</a>, UUPSUpgradeable, <a href="src/src-default/VaultV2.sol//src/src-default/storage/VaultV2Storage.sol/contract.VaultV2Storage.html">VaultV2Storage</a></p>
+<h2 id="state-variables-4"><a class="header" href="#state-variables-4">State Variables</a></h2>
+<h3 id="reward_precision-1"><a class="header" href="#reward_precision-1">REWARD_PRECISION</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARD_PRECISION = 1 ether;
+</code></pre>
+<h3 id="rewards_per_second-1"><a class="header" href="#rewards_per_second-1">REWARDS_PER_SECOND</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION;
+</code></pre>
+<h3 id="minimum_deposit_amount-1"><a class="header" href="#minimum_deposit_amount-1">MINIMUM_DEPOSIT_AMOUNT</a></h3>
+<pre><code class="language-solidity">uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
+</code></pre>
+<h3 id="seconds_in_30_days-1"><a class="header" href="#seconds_in_30_days-1">SECONDS_IN_30_DAYS</a></h3>
+<pre><code class="language-solidity">uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+</code></pre>
+<h3 id="deposit_list_start_id-1"><a class="header" href="#deposit_list_start_id-1">DEPOSIT_LIST_START_ID</a></h3>
+<pre><code class="language-solidity">uint64 constant DEPOSIT_LIST_START_ID = 1;
+</code></pre>
+<h3 id="send_value"><a class="header" href="#send_value">SEND_VALUE</a></h3>
+<pre><code class="language-solidity">uint64 constant SEND_VALUE = 2 ether;
+</code></pre>
+<h3 id="chain_list_separator"><a class="header" href="#chain_list_separator">CHAIN_LIST_SEPARATOR</a></h3>
+<pre><code class="language-solidity">uint16 constant CHAIN_LIST_SEPARATOR = 998;
+</code></pre>
+<h2 id="functions-6"><a class="header" href="#functions-6">Functions</a></h2>
+<h3 id="onlyowner-1"><a class="header" href="#onlyowner-1">onlyOwner</a></h3>
+<pre><code class="language-solidity">modifier onlyOwner();
+</code></pre>
+<h3 id="initialize-1"><a class="header" href="#initialize-1">initialize</a></h3>
+<p><em>Acts as the constructor</em></p>
+<pre><code class="language-solidity">function initialize(address asset_, address lzEndpoint_) external;
+</code></pre>
+<h3 id="deposit-3"><a class="header" href="#deposit-3">deposit</a></h3>
+<p>Deposit Uniswap LP tokens and lock them to earn rewards</p>
+<pre><code class="language-solidity">function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>Amount of Uniswap LP tokens to deposit</td></tr>
+<tr><td><code>monthsLocked_</code></td><td><code>uint64</code></td><td>Locking period, in months: 6, 12, 24 or 48</td></tr>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>Hint for insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="withdraw-2"><a class="header" href="#withdraw-2">withdraw</a></h3>
+<p>Withdraw LP tokens after lock period has expired</p>
+<pre><code class="language-solidity">function withdraw() external override;
+</code></pre>
+<h3 id="claimrewards-2"><a class="header" href="#claimrewards-2">claimRewards</a></h3>
+<p>Transfer claimable rewards to msg.sender</p>
+<pre><code class="language-solidity">function claimRewards(uint64[] calldata depositIds_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by msg.sender</td></tr>
+</tbody></table>
+</div>
+<h3 id="lzreceive-1"><a class="header" href="#lzreceive-1">lzReceive</a></h3>
+<p>LayerZero endpoint will invoke this function to deliver the message on the destination</p>
+<pre><code class="language-solidity">function lzReceive(uint16 srcChainId_, bytes memory srcAddress_, uint64, bytes calldata payload_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>srcChainId_</code></td><td><code>uint16</code></td><td>- the source endpoint identifier</td></tr>
+<tr><td><code>srcAddress_</code></td><td><code>bytes</code></td><td>- the source sending contract address from the source chain</td></tr>
+<tr><td><code>&lt;none&gt;</code></td><td><code>uint64</code></td><td></td></tr>
+<tr><td><code>payload_</code></td><td><code>bytes</code></td><td>- the signed payload is the UA bytes has encoded to be sent</td></tr>
+</tbody></table>
+</div>
+<h3 id="addtrustedremoteaddress-1"><a class="header" href="#addtrustedremoteaddress-1">addTrustedRemoteAddress</a></h3>
+<p>Add a vault on a remote chain as a trusted source of information</p>
+<pre><code class="language-solidity">function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external override onlyOwner;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>remoteChainId_</code></td><td><code>uint16</code></td><td>identifier of the remote chain</td></tr>
+<tr><td><code>remoteAddress_</code></td><td><code>bytes</code></td><td>address of the vault on the remote chain</td></tr>
+</tbody></table>
+</div>
+<h3 id="resettrustedremoteaddresses-1"><a class="header" href="#resettrustedremoteaddresses-1">resetTrustedRemoteAddresses</a></h3>
+<p>Reset the white-listed &quot;trusted source of information&quot; vault addresses</p>
+<pre><code class="language-solidity">function resetTrustedRemoteAddresses() external override onlyOwner;
+</code></pre>
+<h3 id="setlzendpoint-1"><a class="header" href="#setlzendpoint-1">setLzEndpoint</a></h3>
+<p>Set the LayerZero endpoint for inter-chain communication</p>
+<pre><code class="language-solidity">function setLzEndpoint(address lzEndpoint_) external override onlyOwner;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>lzEndpoint_</code></td><td><code>address</code></td><td>address of thw new endpoint</td></tr>
+</tbody></table>
+</div>
+<h3 id="getwithdrawableamount-2"><a class="header" href="#getwithdrawableamount-2">getWithdrawableAmount</a></h3>
+<p>The amount of asset a depositor can withdraw</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be withdrawn</td></tr>
+</tbody></table>
+</div>
+<h3 id="getclaimablerewards-2"><a class="header" href="#getclaimablerewards-2">getClaimableRewards</a></h3>
+<p>The amount of reward tokens that can be claimed by a depositor</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    public
+    view
+    override
+    returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by depositor_</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be claimed</td></tr>
+</tbody></table>
+</div>
+<h3 id="getinsertposition-2"><a class="header" href="#getinsertposition-2">getInsertPosition</a></h3>
+<p>The insert position on the sorted list</p>
+<pre><code class="language-solidity">function getInsertPosition(uint64 expireTime_) public view override returns (uint64 hint_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>expireTime_</code></td><td><code>uint64</code></td><td>the expire time of a deposit</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="getdepositids-2"><a class="header" href="#getdepositids-2">getDepositIds</a></h3>
+<p>The deposit ids of all the active deposits held by a depositor</p>
+<pre><code class="language-solidity">function getDepositIds(address depositor_) external view override returns (uint64[] memory depositIds_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>deposit ids</td></tr>
+</tbody></table>
+</div>
+<h3 id="_maintaindepositlist-1"><a class="header" href="#_maintaindepositlist-1">_maintainDepositList</a></h3>
+<pre><code class="language-solidity">function _maintainDepositList() internal;
+</code></pre>
+<h3 id="_broadcastdeposit"><a class="header" href="#_broadcastdeposit">_broadcastDeposit</a></h3>
+<pre><code class="language-solidity">function _broadcastDeposit(uint128 shares, uint64 expireTime) internal;
+</code></pre>
+<h3 id="_updaterewardspershare-1"><a class="header" href="#_updaterewardspershare-1">_updateRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _updateRewardsPerShare(uint128 shareVariation_, bool positiveVariation_, uint64 timeStamp_)
+    internal
+    returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_authorizeupgrade-1"><a class="header" href="#_authorizeupgrade-1">_authorizeUpgrade</a></h3>
+<pre><code class="language-solidity">function _authorizeUpgrade(address newImplementation) internal override onlyOwner;
+</code></pre>
+<h3 id="_getrewardspershare-1"><a class="header" href="#_getrewardspershare-1">_getRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_isvalid-1"><a class="header" href="#_isvalid-1">_isValid</a></h3>
+<pre><code class="language-solidity">function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_);
 </code></pre>
 
                     </main>
@@ -343,5 +918,6 @@ tools on top of.</p>
         });
         </script>
 
+    </div>
     </body>
 </html>

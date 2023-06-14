@@ -1,0 +1,373 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>VaultV2 - Foundry Template</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../book.css">
+
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var html = document.querySelector('html');
+            var sidebar = null;
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../../index.html">Home</a></li><li class="chapter-item affix "><li class="part-title">src</li><li class="chapter-item expanded "><a href="../../../src/src-default/index.html">❱ src-default</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/src-default/interfaces/index.html">❱ interfaces</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/src-default/interfaces/dependencies/index.html">❱ dependencies</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/src-default/interfaces/dependencies/ILayerZeroReceiver.sol/interface.ILayerZeroReceiver.html">ILayerZeroReceiver</a></li></ol></li><li class="chapter-item "><a href="../../../src/src-default/interfaces/IVault.sol/interface.IVault.html">IVault</a></li><li class="chapter-item "><a href="../../../src/src-default/interfaces/IVaultV2.sol/interface.IVaultV2.html">IVaultV2</a></li></ol></li><li class="chapter-item "><a href="../../../src/src-default/storage/index.html">❱ storage</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../src/src-default/storage/VaultStorage.sol/contract.VaultStorage.html">VaultStorage</a></li><li class="chapter-item "><a href="../../../src/src-default/storage/VaultV2Storage.sol/contract.VaultV2Storage.html">VaultV2Storage</a></li></ol></li><li class="chapter-item "><a href="../../../src/src-default/OFToken.sol/contract.OFToken.html">OFToken</a></li><li class="chapter-item "><a href="../../../src/src-default/UUPSProxy.sol/contract.UUPSProxy.html">UUPSProxy</a></li><li class="chapter-item "><a href="../../../src/src-default/Vault.sol/contract.Vault.html">Vault</a></li><li class="chapter-item expanded "><a href="../../../src/src-default/VaultV2.sol/contract.VaultV2.html" class="active">VaultV2</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Foundry Template</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/3s-joaolopes/Project" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="vaultv2"><a class="header" href="#vaultv2">VaultV2</a></h1>
+<p><a href="https://github.com/3s-joaolopes/Project/blob/10486a517d1a27d874035a22b65f79eb7799ba3c/src/src-default/VaultV2.sol">Git Source</a></p>
+<p><strong>Inherits:</strong>
+<a href="/src/src-default/interfaces/IVaultV2.sol/interface.IVaultV2.html">IVaultV2</a>, UUPSUpgradeable, <a href="/src/src-default/storage/VaultV2Storage.sol/contract.VaultV2Storage.html">VaultV2Storage</a></p>
+<h2 id="state-variables"><a class="header" href="#state-variables">State Variables</a></h2>
+<h3 id="reward_precision"><a class="header" href="#reward_precision">REWARD_PRECISION</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARD_PRECISION = 1 ether;
+</code></pre>
+<h3 id="rewards_per_second"><a class="header" href="#rewards_per_second">REWARDS_PER_SECOND</a></h3>
+<pre><code class="language-solidity">uint128 constant REWARDS_PER_SECOND = 317 * REWARD_PRECISION;
+</code></pre>
+<h3 id="minimum_deposit_amount"><a class="header" href="#minimum_deposit_amount">MINIMUM_DEPOSIT_AMOUNT</a></h3>
+<pre><code class="language-solidity">uint128 constant MINIMUM_DEPOSIT_AMOUNT = 1000;
+</code></pre>
+<h3 id="seconds_in_30_days"><a class="header" href="#seconds_in_30_days">SECONDS_IN_30_DAYS</a></h3>
+<pre><code class="language-solidity">uint64 constant SECONDS_IN_30_DAYS = 2_592_000;
+</code></pre>
+<h3 id="deposit_list_start_id"><a class="header" href="#deposit_list_start_id">DEPOSIT_LIST_START_ID</a></h3>
+<pre><code class="language-solidity">uint64 constant DEPOSIT_LIST_START_ID = 1;
+</code></pre>
+<h3 id="send_value"><a class="header" href="#send_value">SEND_VALUE</a></h3>
+<pre><code class="language-solidity">uint64 constant SEND_VALUE = 2 ether;
+</code></pre>
+<h3 id="chain_list_separator"><a class="header" href="#chain_list_separator">CHAIN_LIST_SEPARATOR</a></h3>
+<pre><code class="language-solidity">uint16 constant CHAIN_LIST_SEPARATOR = 998;
+</code></pre>
+<h2 id="functions"><a class="header" href="#functions">Functions</a></h2>
+<h3 id="onlyowner"><a class="header" href="#onlyowner">onlyOwner</a></h3>
+<pre><code class="language-solidity">modifier onlyOwner();
+</code></pre>
+<h3 id="initialize"><a class="header" href="#initialize">initialize</a></h3>
+<p><em>Acts as the constructor</em></p>
+<pre><code class="language-solidity">function initialize(address asset_, address lzEndpoint_) external;
+</code></pre>
+<h3 id="deposit"><a class="header" href="#deposit">deposit</a></h3>
+<p>Deposit Uniswap LP tokens and lock them to earn rewards</p>
+<pre><code class="language-solidity">function deposit(uint128 amount_, uint64 monthsLocked_, uint64 hint_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>Amount of Uniswap LP tokens to deposit</td></tr>
+<tr><td><code>monthsLocked_</code></td><td><code>uint64</code></td><td>Locking period, in months: 6, 12, 24 or 48</td></tr>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>Hint for insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="withdraw"><a class="header" href="#withdraw">withdraw</a></h3>
+<p>Withdraw LP tokens after lock period has expired</p>
+<pre><code class="language-solidity">function withdraw() external override;
+</code></pre>
+<h3 id="claimrewards"><a class="header" href="#claimrewards">claimRewards</a></h3>
+<p>Transfer claimable rewards to msg.sender</p>
+<pre><code class="language-solidity">function claimRewards(uint64[] calldata depositIds_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by msg.sender</td></tr>
+</tbody></table>
+</div>
+<h3 id="lzreceive"><a class="header" href="#lzreceive">lzReceive</a></h3>
+<p>LayerZero endpoint will invoke this function to deliver the message on the destination</p>
+<pre><code class="language-solidity">function lzReceive(uint16 srcChainId_, bytes memory srcAddress_, uint64, bytes calldata payload_) external override;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>srcChainId_</code></td><td><code>uint16</code></td><td>- the source endpoint identifier</td></tr>
+<tr><td><code>srcAddress_</code></td><td><code>bytes</code></td><td>- the source sending contract address from the source chain</td></tr>
+<tr><td><code>&lt;none&gt;</code></td><td><code>uint64</code></td><td></td></tr>
+<tr><td><code>payload_</code></td><td><code>bytes</code></td><td>- the signed payload is the UA bytes has encoded to be sent</td></tr>
+</tbody></table>
+</div>
+<h3 id="addtrustedremoteaddress"><a class="header" href="#addtrustedremoteaddress">addTrustedRemoteAddress</a></h3>
+<p>Add a vault on a remote chain as a trusted source of information</p>
+<pre><code class="language-solidity">function addTrustedRemoteAddress(uint16 remoteChainId_, bytes calldata remoteAddress_) external override onlyOwner;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>remoteChainId_</code></td><td><code>uint16</code></td><td>identifier of the remote chain</td></tr>
+<tr><td><code>remoteAddress_</code></td><td><code>bytes</code></td><td>address of the vault on the remote chain</td></tr>
+</tbody></table>
+</div>
+<h3 id="resettrustedremoteaddresses"><a class="header" href="#resettrustedremoteaddresses">resetTrustedRemoteAddresses</a></h3>
+<p>Reset the white-listed &quot;trusted source of information&quot; vault addresses</p>
+<pre><code class="language-solidity">function resetTrustedRemoteAddresses() external override onlyOwner;
+</code></pre>
+<h3 id="setlzendpoint"><a class="header" href="#setlzendpoint">setLzEndpoint</a></h3>
+<p>Set the LayerZero endpoint for inter-chain communication</p>
+<pre><code class="language-solidity">function setLzEndpoint(address lzEndpoint_) external override onlyOwner;
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>lzEndpoint_</code></td><td><code>address</code></td><td>address of thw new endpoint</td></tr>
+</tbody></table>
+</div>
+<h3 id="getwithdrawableamount"><a class="header" href="#getwithdrawableamount">getWithdrawableAmount</a></h3>
+<p>The amount of asset a depositor can withdraw</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getWithdrawableAmount(address depositor_) external view override returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be withdrawn</td></tr>
+</tbody></table>
+</div>
+<h3 id="getclaimablerewards"><a class="header" href="#getclaimablerewards">getClaimableRewards</a></h3>
+<p>The amount of reward tokens that can be claimed by a depositor</p>
+<p><em>Since the deposit list isn't updated, the result isn't garanteed to be fully up-to-date</em></p>
+<pre><code class="language-solidity">function getClaimableRewards(address depositor_, uint64[] calldata depositIds_)
+    public
+    view
+    override
+    returns (uint128 amount_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>Ids of the deposits held by depositor_</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>amount_</code></td><td><code>uint128</code></td><td>amount that can be claimed</td></tr>
+</tbody></table>
+</div>
+<h3 id="getinsertposition"><a class="header" href="#getinsertposition">getInsertPosition</a></h3>
+<p>The insert position on the sorted list</p>
+<pre><code class="language-solidity">function getInsertPosition(uint64 expireTime_) public view override returns (uint64 hint_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>expireTime_</code></td><td><code>uint64</code></td><td>the expire time of a deposit</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>hint_</code></td><td><code>uint64</code></td><td>insert position on the sorted list</td></tr>
+</tbody></table>
+</div>
+<h3 id="getdepositids"><a class="header" href="#getdepositids">getDepositIds</a></h3>
+<p>The deposit ids of all the active deposits held by a depositor</p>
+<pre><code class="language-solidity">function getDepositIds(address depositor_) external view override returns (uint64[] memory depositIds_);
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositor_</code></td><td><code>address</code></td><td>address of the depositor</td></tr>
+</tbody></table>
+</div>
+<p><strong>Returns</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>depositIds_</code></td><td><code>uint64[]</code></td><td>deposit ids</td></tr>
+</tbody></table>
+</div>
+<h3 id="_maintaindepositlist"><a class="header" href="#_maintaindepositlist">_maintainDepositList</a></h3>
+<pre><code class="language-solidity">function _maintainDepositList() internal;
+</code></pre>
+<h3 id="_broadcastdeposit"><a class="header" href="#_broadcastdeposit">_broadcastDeposit</a></h3>
+<pre><code class="language-solidity">function _broadcastDeposit(uint128 shares, uint64 expireTime) internal;
+</code></pre>
+<h3 id="_updaterewardspershare"><a class="header" href="#_updaterewardspershare">_updateRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _updateRewardsPerShare(uint128 shareVariation_, bool positiveVariation_, uint64 timeStamp_)
+    internal
+    returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_authorizeupgrade"><a class="header" href="#_authorizeupgrade">_authorizeUpgrade</a></h3>
+<pre><code class="language-solidity">function _authorizeUpgrade(address newImplementation) internal override onlyOwner;
+</code></pre>
+<h3 id="_getrewardspershare"><a class="header" href="#_getrewardspershare">_getRewardsPerShare</a></h3>
+<pre><code class="language-solidity">function _getRewardsPerShare(uint64 timestamp_) internal view returns (uint128 rewardsPerShare_);
+</code></pre>
+<h3 id="_isvalid"><a class="header" href="#_isvalid">_isValid</a></h3>
+<pre><code class="language-solidity">function _isValid(uint64 expireTime_, uint64 hint_) internal view returns (bool valid_);
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../src/src-default/Vault.sol/contract.Vault.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../src/src-default/Vault.sol/contract.Vault.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../solidity.min.js"></script>
+
+
+    </div>
+    </body>
+</html>
