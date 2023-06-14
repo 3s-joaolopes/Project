@@ -12,6 +12,8 @@ import { console2 } from "@forge-std/console2.sol";
 contract VaultV2Invariants is Test {
     VaultV2Handler handler;
 
+    uint256 private _setUpCounter;
+
     function setUp() public {
         handler = new VaultV2Handler();
 
